@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>计划明细 · AI 智能投手</title>
+<style>
+/* 系统字体栈，无远程字体依赖 */
+
+:root{
+  --primary-700:#3562a6;--primary-600:#4578be;--primary-500:#5b91d4;
+  --primary-100:#e4eefb;--primary-50:#f1f6fd;
+  --ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;
+  --hair:#e2e8f0;--hair-2:#f1f5f9;
+  --success:#22a67a;--success-light:#f0fdf6;
+  --danger:#dc5a5a;--danger-light:#fef5f5;
+  --warning:#e09422;--warning-light:#fefcf3;
+  --num:'Manrope';--mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:#fff radial-gradient(840px 240px at 50% -120px,rgba(91,145,212,.13),transparent 70%) no-repeat}
+.page{max-width:1280px;margin:0 auto;padding:96px 40px 56px}
+.num{font-family:var(--num),var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:var(--primary-600);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+.reveal{opacity:0;transform:translateY(12px);animation:rise .7s cubic-bezier(.16,.84,.3,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.d1{animation-delay:.04s}.d2{animation-delay:.14s}.d3{animation-delay:.24s}
+
+/* ===== 头部 ===== */
+.lede{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:26px;border-bottom:1px solid var(--hair);margin-bottom:26px}
+.lede h1{font-size:22px;font-weight:740;letter-spacing:-.02em;line-height:1.45}
+.lede h1 em{font-style:normal;font-family:var(--num);color:var(--primary-600);font-variant-numeric:tabular-nums}
+.lede p{font-size:13px;color:var(--ink-3);margin-top:7px}
+.filters{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.tabs{display:flex;gap:2px;border:1px solid var(--hair);border-radius:9px;padding:2px;background:#fff}
+.tabs button{height:30px;border:0;background:transparent;border-radius:7px;padding:0 13px;color:var(--ink-3);font-size:12.5px;font-weight:620;cursor:pointer;font-family:inherit;transition:color .15s,background .15s}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{background:var(--ink);color:#fff}
+
+/* ===== 总览条 ===== */
+.ov{display:flex;margin-bottom:30px}
+.ov .f{padding:0 30px;border-left:1px solid var(--hair)}
+.ov .f:first-child{padding-left:0;border-left:0}
+.ov b{display:block;font-family:var(--num);font-size:25px;font-weight:760;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.ov b.warn{color:var(--warning)}
+.ov b.bad{color:var(--danger)}
+.ov span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:6px;line-height:1.5}
+
+/* ===== 列表 ===== */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.seg{display:flex;gap:2px}
+.seg button{height:30px;border:1px solid transparent;background:transparent;border-radius:8px;padding:0 13px;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.seg button:hover{background:var(--hair-2)}
+.seg button.on{background:var(--primary-50);color:var(--primary-700);font-weight:650}
+.toolbar .sp{flex:1}
+.search{height:32px;display:flex;align-items:center;gap:7px;border:1px solid var(--hair);border-radius:9px;padding:0 11px;background:#fff}
+.search input{border:0;outline:0;font-size:12.5px;font-family:inherit;color:var(--ink);width:150px;background:transparent}
+.search svg{color:var(--ink-3)}
+
+/* 表格卡容器 */
+.tbl-card{border:1px solid var(--hair);border-radius:13px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.03)}
+.tbl-card th{background:#fafbfd;color:var(--ink-2)}
+.tbl-card thead th{border-bottom:1px solid var(--hair)}
+.tbl-card tbody tr:last-child td{border-bottom:0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;color:var(--ink-3);font-weight:650;text-align:left;padding:9px 12px;border-bottom:1px solid var(--hair);white-space:nowrap;letter-spacing:.02em}
+th.r,td.r{text-align:right}
+td{padding:13px 12px;border-bottom:1px solid var(--hair-2);vertical-align:middle}
+tbody tr{cursor:pointer;transition:background .13s}
+tbody tr:hover{background:var(--primary-50)}
+.pn{font-weight:650;line-height:1.4}
+.pn i{font-style:normal;display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:2px}
+.ptag{font-size:10.5px;font-weight:650;border-radius:5px;padding:3px 7px;white-space:nowrap}
+.ptag.live{color:var(--primary-700);background:var(--primary-50)}
+.ptag.goods{color:#7c5cc4;background:#f7f4fd}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:620;white-space:nowrap}
+.st i{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.st.run{color:var(--success)}.st.run i{background:var(--success)}
+.st.watch{color:var(--warning)}.st.watch i{background:var(--warning)}
+.st.stop{color:var(--ink-3)}.st.stop i{background:var(--ink-3)}
+td.num,td .num{font-variant-numeric:tabular-nums}
+.roi-ok{color:var(--success);font-weight:680}
+.roi-bad{color:var(--danger);font-weight:680}
+.last-act{font-size:12px;color:var(--ink-2);line-height:1.45}
+.last-act b{font-weight:650}
+.last-act time{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:2px}
+.open-file{height:28px;padding:0 12px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;font-weight:620;color:var(--primary-600);cursor:pointer;font-family:inherit;white-space:nowrap;transition:border-color .15s,background .15s}
+.open-file:hover{border-color:var(--primary-300,#a3c6ed);background:var(--primary-50)}
+
+/* ===== 档案抽屉 ===== */
+.scrim{position:fixed;inset:0;background:rgba(15,23,42,.32);z-index:1290;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(2px)}
+.scrim.on{opacity:1;pointer-events:auto}
+.file{position:fixed;top:84px;right:12px;bottom:12px;width:880px;max-width:94vw;background:#fff;z-index:1300;box-shadow:0 0 0 1px var(--hair),-20px 0 60px -24px rgba(15,23,42,.4);transform:translateX(106%);transition:transform .3s cubic-bezier(.2,.8,.25,1);display:flex;flex-direction:column;border-radius:16px}
+.file.on{transform:none}
+.f-head{display:flex;align-items:flex-start;gap:12px;padding:20px 24px 16px;border-bottom:1px solid var(--hair)}
+.f-head .tt{flex:1;min-width:0}
+.f-head h3{font-size:16px;font-weight:740;letter-spacing:-.01em}
+.f-head .meta{display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap}
+.f-head .meta .ptag{font-size:10px}
+.f-head .meta span{font-size:11.5px;color:var(--ink-3)}
+.f-x{width:30px;height:30px;border:0;background:transparent;border-radius:8px;color:var(--ink-3);cursor:pointer;display:grid;place-items:center;flex:0 0 auto}
+.f-x:hover{background:var(--hair-2);color:var(--ink)}
+.f-body{flex:1;overflow-y:auto;padding:20px 24px 28px}
+.f-sec{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin:24px 0 12px}
+.f-sec:first-child{margin-top:0}
+.f-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 0}
+.f-nums .f{padding:0 16px;border-left:1px solid var(--hair)}
+.f-nums .f:nth-child(4n+1){padding-left:0;border-left:0}
+.f-nums b{display:block;font-family:var(--num);font-size:18px;font-weight:760;font-variant-numeric:tabular-nums}
+.f-nums b.bad{color:var(--danger)}
+.f-nums b.ok{color:var(--success)}
+.f-nums span{display:block;font-size:10px;color:var(--ink-3);margin-top:4px}
+/* 走势图 + 动作点 */
+.f-chart{position:relative}
+.f-chart svg{width:100%;height:auto;display:block}
+.f-chart text{font-family:var(--mono);font-size:9px;fill:var(--ink-3)}
+.act-dot{cursor:pointer}
+.act-dot circle{transition:r .15s}
+.act-dot:hover circle{r:7}
+.f-tip{position:absolute;display:none;background:var(--ink);color:#fff;font-size:11px;line-height:1.5;border-radius:8px;padding:8px 11px;max-width:230px;z-index:5;pointer-events:none;transform:translate(-50%,calc(-100% - 10px))}
+.f-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--ink)}
+.f-tip b{color:#9ed4ff}
+.f-main{display:grid;grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+.f-left{min-width:0;padding-right:24px}
+.f-right{min-width:0;border-left:1px solid var(--hair-2);padding-left:24px}
+.f-right .tl{max-height:430px;overflow-y:auto;padding-right:6px}
+.f-right .tl-i{grid-template-columns:12px 1fr;gap:8px;padding-bottom:13px}
+.f-right .tl-i time{font-size:9.5px;margin-bottom:1px}
+.f-right .tl-i .bd strong{font-size:12px;line-height:1.45}
+.f-right .tl-i .bd strong .who{font-size:8.5px;padding:1px 5px;margin-left:5px}
+.f-right .tl-i .bd .why{font-size:10.5px;margin-top:2px;line-height:1.5}
+.f-right .tl-i .bd .after{font-size:10.5px;padding:3px 8px;margin-top:5px;line-height:1.45}
+.f-right .tl-rail i{width:7px;height:7px}
+.f-right .tl-rail:after{top:14px}
+@media(max-width:1000px){.f-main{grid-template-columns:1fr}.f-right{border-left:0;padding-left:0;margin-top:18px;border-top:1px solid var(--hair-2);padding-top:16px}.f-left{padding-right:0}}
+.f-gran{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.f-gran .gk{font-size:12px;font-weight:650;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px}
+.f-gran select{height:28px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;color:var(--ink);font-family:inherit;padding:0 6px;outline:0;cursor:pointer}
+.f-tabs{display:flex;gap:2px;border:1px solid var(--hair);border-radius:9px;padding:2px;background:#fff}
+.f-tabs button{height:26px;border:0;background:transparent;border-radius:7px;padding:0 12px;color:var(--ink-3);font-size:12px;font-weight:620;cursor:pointer;font-family:inherit}
+.f-tabs button.on{background:var(--ink);color:#fff}
+.f-tbl{margin-top:12px;border:1px solid var(--hair);border-radius:11px;overflow:hidden}
+.f-tbl .scroll{max-height:216px;overflow-y:auto}
+.f-tbl table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed}
+.f-tbl th:first-child,.f-tbl td:first-child{width:60px}
+.f-tbl th{position:sticky;top:0;background:#fafbfd;font-size:10px;color:var(--ink-3);font-weight:650;text-align:left;padding:7px 10px;border-bottom:1px solid var(--hair);white-space:nowrap}
+.f-tbl th.r,.f-tbl td.r{text-align:right}
+.f-tbl td{padding:6.5px 10px;border-bottom:1px solid var(--hair-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.f-tbl tbody tr:last-child td{border-bottom:0}
+.f-tbl td.bad{color:var(--danger);font-weight:680}
+.f-tbl td.wrn{color:var(--warning);font-weight:680}
+.f-tbl td.ok{color:var(--success);font-weight:650}
+.f-legend{display:flex;gap:14px;font-size:10.5px;color:var(--ink-3);margin-top:8px}
+.f-legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+/* 时间线 */
+.tl{display:flex;flex-direction:column}
+.tl-i{display:grid;grid-template-columns:14px 1fr;gap:10px;padding-bottom:18px;position:relative}
+.tl-i:last-child{padding-bottom:0}
+.tl-i time{display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);line-height:1.4;margin-bottom:2px}
+.tl-rail{position:relative}
+.tl-rail i{position:absolute;left:50%;top:4px;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:var(--primary-500)}
+.tl-i.adopt .tl-rail i,.tl-i.adjust .tl-rail i{background:#fff;border:2.5px solid var(--primary-600)}
+.tl-i.risk .tl-rail i{background:var(--danger)}
+.tl-rail:after{content:"";position:absolute;left:50%;top:17px;bottom:-6px;transform:translateX(-50%);width:1px;background:var(--hair)}
+.tl-i:last-child .tl-rail:after{display:none}
+.tl-i .bd strong{font-size:13px;font-weight:660;line-height:1.5}
+.tl-i .bd strong .who{font-size:9px;font-weight:700;border-radius:4px;padding:1.5px 6px;margin-left:7px;vertical-align:1px;white-space:nowrap}
+.tl-i .bd strong .who.ai{color:var(--ink-3);background:var(--hair-2)}
+.tl-i .bd strong .who.adopt{color:var(--primary-600);background:var(--primary-50)}
+.tl-i .bd strong .who.adjust{color:var(--warning);background:var(--warning-light)}
+.tl-i .bd strong .who.reject{color:var(--ink-3);background:var(--hair-2);}
+.tl-i .bd .why{font-size:11.5px;color:var(--ink-3);margin-top:3px;line-height:1.55}
+.tl-i .bd .after{display:inline-flex;align-items:baseline;gap:6px;margin-top:7px;font-size:11.5px;border-radius:7px;padding:5px 9px;line-height:1.5}
+.tl-i .bd .after.good{color:#147a57;background:var(--success-light)}
+.tl-i .bd .after.bad{color:#b44;background:var(--danger-light)}
+.tl-i .bd .after.wait{color:var(--ink-2);background:var(--hair-2)}
+.f-foot{padding:14px 24px;border-top:1px solid var(--hair);display:flex;gap:16px;font-size:12.5px;border-radius:0 0 16px 16px}
+
+/* ===== 分页 ===== */
+.pager{display:flex;align-items:center;gap:14px;padding:16px 2px 0;font-size:12.5px;color:var(--ink-3)}
+.pager .info b{font-family:var(--num);color:var(--ink-2);font-weight:650;font-variant-numeric:tabular-nums}
+.pager .sp{flex:1}
+.pg-btns{display:flex;gap:4px;align-items:center}
+.pg-btns button{min-width:30px;height:30px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;font-weight:620;color:var(--ink-2);cursor:pointer;font-family:var(--num);padding:0 8px;transition:border-color .15s,background .15s,color .15s}
+.pg-btns button:hover:not(:disabled){border-color:var(--primary-300,#a3c6ed);color:var(--primary-600)}
+.pg-btns button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pg-btns button:disabled{opacity:.4;cursor:default}
+.pg-btns .ell{color:var(--ink-3);padding:0 2px}
+.pg-size{display:flex;align-items:center;gap:6px}
+.pg-size select{height:30px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;color:var(--ink-2);font-family:inherit;padding:0 6px;outline:0;cursor:pointer}
+@media(max-width:760px){.page{padding:84px 18px 40px}.ov{flex-wrap:wrap;gap:18px 0}.ov .f{padding:0 20px}.f-nums{grid-template-columns:1fr 1fr}.f-nums .f:nth-child(2n+1){padding-left:0;border-left:0}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="lede reveal d1">
+    <div>
+      <h1>我正在管 <em>341</em> 条计划，每条都有一本档案。</h1>
+      <p>从交给我的那天起，每次动作、每次效果，都记在各自的档案里——点任意一条查看。</p>
+    </div>
+    <div class="filters">
+      <div class="tabs" role="tablist">
+        <button role="tab">近 3 天</button><button role="tab" class="on">近 7 天</button><button role="tab">近 15 天</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="ov reveal d2">
+    <div class="f"><b class="num">341</b><span>托管中 · 直播间 128 / 商品 213</span></div>
+    <div class="f"><b class="num warn">5</b><span>观察中 · 动作后看效果</span></div>
+    <div class="f"><b class="num bad">2</b><span>异常 · 等你拍板（在智能优化）</span></div>
+    <div class="f"><b class="num">87</b><span>已暂停 · 含我拦下的 41 条</span></div>
+  </section>
+
+  <section class="reveal d3">
+    <div class="toolbar">
+      <div class="seg" id="segType">
+        <button class="on">全部 341</button>
+        <button>直播间 128</button>
+        <button>商品 213</button>
+      </div>
+      <div class="seg" id="segState">
+        <button class="on">全部状态</button>
+        <button>投放中</button>
+        <button>观察中</button>
+        <button>已暂停</button>
+      </div>
+      <span class="sp"></span>
+      <div class="search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        <input type="text" placeholder="计划名 / ID">
+      </div>
+    </div>
+
+    <div class="tbl-card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:26%">计划</th>
+          <th style="width:9%">类型</th>
+          <th style="width:11%">状态</th>
+          <th class="r" style="width:11%">今日消耗</th>
+          <th class="r" style="width:13%">实际投产比 / 盈亏线</th>
+          <th style="width:21%">我最近的动作</th>
+          <th style="width:9%"></th>
+        </tr>
+      </thead>
+      <tbody id="planRows">
+        <tr data-file="p1">
+          <td><div class="pn">夏季连衣裙-直播间引流<i>#41203</i></div></td>
+          <td><span class="ptag live">直播间</span></td>
+          <td><span class="st watch"><i></i>观察中</span></td>
+          <td class="r num">¥18,420</td>
+          <td class="r num"><span class="roi-bad">2.7</span> / 2.6</td>
+          <td><div class="last-act"><b>调投产比 + 降预算</b>（采纳）<time>今天 08:12</time></div></td>
+          <td class="r"><button class="open-file">档案</button></td>
+        </tr>
+        <tr data-file="p2">
+          <td><div class="pn">凉感四件套-货架场<i>#43890</i></div></td>
+          <td><span class="ptag goods">商品</span></td>
+          <td><span class="st run"><i></i>投放中</span></td>
+          <td class="r num">¥2,460</td>
+          <td class="r num"><span class="roi-ok">4.5</span> / 2.8</td>
+          <td><div class="last-act"><b>放量 ¥2,000 → ¥2,800</b>（调整后采纳）<time>今天 08:15</time></div></td>
+          <td class="r"><button class="open-file">档案</button></td>
+        </tr>
+        <tr data-file="p3">
+          <td><div class="pn">夏凉被清仓-直播间<i>#42108</i></div></td>
+          <td><span class="ptag live">直播间</span></td>
+          <td><span class="st stop"><i></i>已暂停</span></td>
+          <td class="r num">¥6,130</td>
+          <td class="r num"><span class="roi-bad">1.9</span> / 2.6</td>
+          <td><div class="last-act"><b>持续亏损，已暂停</b>（我自动）<time>今天 03:12</time></div></td>
+          <td class="r"><button class="open-file">档案</button></td>
+        </tr>
+        <tr data-file="p2">
+          <td><div class="pn">防晒衣男款-货架场<i>#44102</i></div></td>
+          <td><span class="ptag goods">商品</span></td>
+          <td><span class="st run"><i></i>投放中</span></td>
+          <td class="r num">¥3,300</td>
+          <td class="r num"><span class="roi-ok">3.9</span> / 2.8</td>
+          <td><div class="last-act"><b>追投素材 9412</b>（采纳）<time>今天 08:17</time></div></td>
+          <td class="r"><button class="open-file">档案</button></td>
+        </tr>
+        <tr data-file="p1">
+          <td><div class="pn">直播大场预热-引流<i>#41866</i></div></td>
+          <td><span class="ptag live">直播间</span></td>
+          <td><span class="st run"><i></i>投放中</span></td>
+          <td class="r num">¥9,840</td>
+          <td class="r num"><span class="roi-ok">3.6</span> / 2.6</td>
+          <td><div class="last-act"><b>上调预算</b>（我自动）<time>昨天 21:40</time></div></td>
+          <td class="r"><button class="open-file">档案</button></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="pager">
+      <span class="info">第 <b>1–20</b> 条 · 共 <b>341</b> 条</span>
+      <span class="sp"></span>
+      <div class="pg-size">每页 <select><option>20</option><option>50</option><option>100</option></select> 条</div>
+      <div class="pg-btns" id="pgBtns">
+        <button disabled>‹</button>
+        <button class="on">1</button>
+        <button>2</button>
+        <button>3</button>
+        <span class="ell">…</span>
+        <button>18</button>
+        <button>›</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 单计划档案抽屉 ===== -->
+<div class="scrim" id="fScrim"></div>
+<aside class="file" id="fPanel" aria-hidden="true">
+  <div class="f-head">
+    <div class="tt">
+      <h3 id="fName"></h3>
+      <div class="meta" id="fMeta"></div>
+    </div>
+    <button class="f-x" id="fClose" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="f-body">
+    <div class="f-main">
+      <div class="f-left">
+        <div class="f-gran">
+          <span class="gk">时间粒度</span>
+          <div class="f-tabs" id="fGran"><button class="on" data-g="day">按天</button><button data-g="hour">按小时</button></div>
+          <span class="gk" id="fDateWrap" style="display:none">选择日期 <select id="fDate"></select></span>
+        </div>
+        <div class="f-chart" id="fChart"></div>
+        <div class="f-tbl" id="fTable"></div>
+      </div>
+      <div class="f-right">
+        <div class="f-sec" style="margin-top:0">档案 · 接管以来</div>
+        <div class="tl" id="fTl"></div>
+      </div>
+    </div>
+  </div>
+  <div class="f-foot">
+    <a href="#" data-goto="view-zhixing">这条计划的全部日志 →</a>
+    <a href="#" data-goto="view-sheding">盈亏线设置 →</a>
+  </div>
+</aside>
+
+<script>
+(function(){
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ===== 档案数据 ===== */
+  /* chart: pts=投产比七日序列(纵向值域 1.5~5.5)，line=盈亏线，acts=动作点{di:第几天(0-6小数可), who:ai/you/risk, t:标题, d:说明} */
+  var FILES = {
+    p1:{
+      name:'夏季连衣裙-直播间引流', id:'#41203', type:'live', state:'托管第 18 天 · L1 确认模式 · 观察中',
+      nums:[
+        {v:'¥127,400', l:'消耗'},
+        {v:'2.7', l:'实际投产比', bad:1},
+        {v:'2.6', l:'你设的盈亏线'},
+        {v:'¥382,200', l:'成交金额'},
+        {v:'297', l:'订单数'},
+        {v:'2.4%', l:'转化率'},
+        {v:'4.18%', l:'点击率'},
+        {v:'13,840', l:'点击次数'}
+      ],
+      line:2.6,
+      pts:[3.8,3.6,3.3,3.6,3.4,3.0,2.7], baseCost:18200, baseCvr:2.4,
+      acts:[
+        {di:1.5, who:'ai', t:'调投产比 3.8 → 3.6', d:'回收放缓，收紧出价'},
+        {di:3, who:'reject', t:'未采纳：维持投放', d:'大场前你判断不动，我继续盯'},
+        {di:4.2, who:'ai', t:'调投产比 3.6 → 3.4', d:'此后稳了 2 天'},
+        {di:6, who:'risk', t:'采纳：调投产比 + 降预算', d:'今早 08:12 · 进入 24h 观察'}
+      ],
+      tl:[
+        {t:'今天 08:12', who:'adopt', risk:1, s:'调投产比 3.4 → 2.9 · 降预算 ¥3,000 → ¥2,400', w:'连续 2 天逼近盈亏线，我建议收紧，你确认执行', a:'wait', atx:'观察中 · 24h 内跌破盈亏线我会立即暂停并通知你'},
+        {t:'06/07 14:20', who:'ai', s:'调目标投产比 3.6 → 3.4', w:'回收放缓，收紧出价节奏', a:'good', atx:'此后实际投产比稳了 2 天'},
+        {t:'06/05 20:15', who:'reject', s:'未采纳：维持投放', w:'我建议收紧，你判断大场开播前不动', a:'good', atx:'大场当晚投产比 4.1，你的判断对'},
+        {t:'06/04 09:30', who:'ai', s:'调目标投产比 3.8 → 3.6', w:'点击率下滑，预防性收紧', a:'good', atx:'消耗节奏回到正常区间'},
+        {t:'05/24', who:'ai', s:'接管这条计划', w:'你把它交给我，设盈亏线 2.6', a:'good', atx:'接管以来累计经手 ¥31.2万 消耗'}
+      ]
+    },
+    p2:{
+      name:'凉感四件套-货架场', id:'#43890', type:'goods', state:'托管第 26 天 · L1 确认模式 · 投放中',
+      nums:[
+        {v:'¥13,400', l:'消耗'},
+        {v:'4.5', l:'实际投产比', ok:1},
+        {v:'2.8', l:'你设的盈亏线'},
+        {v:'¥56,300', l:'成交金额'},
+        {v:'186', l:'订单数'},
+        {v:'3.3%', l:'转化率'},
+        {v:'5.0%', l:'点击率'},
+        {v:'4,200', l:'点击次数'}
+      ],
+      line:2.8,
+      pts:[3.6,3.9,4.1,4.2,4.4,4.3,4.5], baseCost:1900, baseCvr:3.3,
+      acts:[
+        {di:2, who:'ai', t:'预算 ¥1,600 → ¥2,000', d:'连续达标，第一次放量'},
+        {di:4.5, who:'ai', t:'删除低效素材 8101', d:'成交未跟上消耗'},
+        {di:6, who:'adjust', t:'调整后采纳：放量 ¥2,000 → ¥2,800', d:'今早 08:15 · 我建议 ¥2,600，你加到 ¥2,800'}
+      ],
+      tl:[
+        {t:'今天 08:15', who:'adjust', s:'放量：日预算 ¥2,000 → ¥2,800', w:'连续 3 天达标且预算 15:00 前花完，我建议 ¥2,600，你调整到 ¥2,800 执行', a:'wait', atx:'观察中 · 投产比跌破 3.5 我停止加量'},
+        {t:'06/06 11:20', who:'ai', s:'删除素材 8101', w:'连续观察期内成交未跟上消耗', a:'good', atx:'预算流向高效素材，计划投产比 +0.2'},
+        {t:'06/05 10:00', who:'ai', s:'预算 ¥1,600 → ¥2,000', w:'连续达标，第一次放量', a:'good', atx:'投产比没掉、消耗当天花满'},
+        {t:'05/16', who:'ai', s:'接管这条计划', w:'你把它交给我，设盈亏线 2.8', a:'good', atx:'接管以来投产比从 3.2 涨到 4.5'}
+      ]
+    },
+    p3:{
+      name:'夏凉被清仓-直播间', id:'#42108', type:'live', state:'托管第 9 天 · L2 自动模式 · 已暂停',
+      nums:[
+        {v:'¥41,200', l:'消耗'},
+        {v:'1.9', l:'暂停时投产比', bad:1},
+        {v:'2.6', l:'你设的盈亏线'},
+        {v:'¥78,300', l:'成交金额'},
+        {v:'88', l:'订单数'},
+        {v:'1.6%', l:'转化率'},
+        {v:'3.1%', l:'点击率'},
+        {v:'5,420', l:'点击次数'}
+      ],
+      line:2.6,
+      pts:[3.4,3.2,3.1,2.9,2.6,2.2,1.9], baseCost:5900, baseCvr:1.6,
+      acts:[
+        {di:3.2, who:'ai', t:'调投产比 3.2 → 3.0', d:'第一次预警收紧'},
+        {di:5, who:'ai', t:'调投产比 3.0 → 2.8', d:'继续下滑，二次收紧'},
+        {di:6, who:'risk', t:'凌晨 03:12 暂停', d:'持续亏损，L2 范围内我直接停了'}
+      ],
+      tl:[
+        {t:'今天 03:12', who:'ai', risk:1, s:'暂停计划', w:'实际投产比 1.9，跌破你设的 2.6 · 夜间无人值守，L2 范围内我直接执行', a:'good', atx:'已止住继续消耗 · 今早已通知你'},
+        {t:'06/08 16:40', who:'ai', s:'调目标投产比 3.0 → 2.8', w:'投产比持续下滑，二次收紧', a:'bad', atx:'未能止住下滑趋势'},
+        {t:'06/07 10:05', who:'ai', s:'调目标投产比 3.2 → 3.0', w:'点击率与转化率同步走低，预警收紧', a:'bad', atx:'短暂回稳后继续下滑'},
+        {t:'06/02', who:'ai', s:'接管这条计划', w:'你把它交给我，设盈亏线 2.6，授权 L2 自动', a:'good', atx:'清仓期计划，波动大，全程秒级盯防'}
+      ]
+    }
+  };
+
+  /* ===== 抽屉渲染 ===== */
+  var scrim = document.getElementById('fScrim'), panel = document.getElementById('fPanel');
+  var curFile = null, fGranMode = 'day';
+  function openFile(key){
+    var f = FILES[key]; if(!f) return;
+    document.getElementById('fName').textContent = f.name;
+    document.getElementById('fMeta').innerHTML =
+      '<span class="ptag ' + (f.type==='live'?'live':'goods') + '">' + (f.type==='live'?'直播间':'商品') + '</span>' +
+      '<span class="mono" style="font-size:10.5px">' + f.id + '</span><span>' + f.state + '</span>';
+    curFile = f; fGranMode = 'day';
+    document.querySelectorAll('#fGran button').forEach(function(x){ x.classList.toggle('on', x.getAttribute('data-g')==='day'); });
+    document.getElementById('fDateWrap').style.display = 'none';
+    fRenderAll();
+    document.getElementById('fTl').innerHTML = f.tl.map(function(i){
+      return '<div class="tl-i ' + (i.who||'') + ' ' + (i.risk?'risk':'') + '">' +
+        '<span class="tl-rail"><i></i></span>' +
+        '<div class="bd"><time>' + i.t + '</time><strong>' + i.s + '<span class="who ' + (i.who||'ai') + '">' + ({ai:'我自动',adopt:'采纳',adjust:'调整后采纳',reject:'未采纳'}[i.who]||'我自动') + '</span></strong>' +
+        '<div class="why">' + i.w + '</div>' +
+        '<span class="after ' + i.a + '">' + (i.a==='good'?'↗':(i.a==='bad'?'↘':'◷')) + ' ' + i.atx + '</span></div></div>';
+    }).join('');
+    panel.classList.add('on'); scrim.classList.add('on');
+    panel.setAttribute('aria-hidden','false');
+  }
+  function closeFile(){ panel.classList.remove('on'); scrim.classList.remove('on'); panel.setAttribute('aria-hidden','true'); }
+  document.getElementById('fClose').addEventListener('click', closeFile);
+  scrim.addEventListener('click', closeFile);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeFile(); });
+  document.querySelectorAll('#planRows tr').forEach(function(tr){
+    tr.addEventListener('click', function(){ openFile(tr.getAttribute('data-file')); });
+  });
+
+  /* ===== 完整数据:按天/按小时 + 双轴图 + 明细表(与智能优化抽屉同款) ===== */
+  var FDAYS = ['06/03','06/04','06/05','06/06','06/07','06/08','06/09'];
+  function fGenDaily(cfg){
+    return cfg.pts.map(function(roi, i){
+      var cost = Math.round(cfg.baseCost * (0.85 + 0.3 * Math.sin(i * 1.7)));
+      return { t: FDAYS[i], roi: roi, cost: cost, gmv: Math.round(cost * roi), clk: Math.round(cost / 3.2), cvr: (cfg.baseCvr + 0.4 * Math.sin(i)).toFixed(1) + '%' };
+    });
+  }
+  function fGenHourly(cfg){
+    var rows = [];
+    for(var h = 0; h < 24; h++){
+      var wave = 0.55 + 0.45 * Math.sin((h - 3) / 24 * 2 * Math.PI);
+      var roi = +(cfg.pts[6] * (0.85 + 0.3 * Math.sin(h * 1.3))).toFixed(1);
+      var cost = Math.round(cfg.baseCost / 24 * wave * 2);
+      rows.push({ t: ('0' + h).slice(-2) + ':00', roi: roi, cost: cost, gmv: Math.round(cost * roi), clk: Math.round(cost / 3.2), cvr: (cfg.baseCvr + 0.5 * Math.sin(h / 3)).toFixed(1) + '%' });
+    }
+    return rows;
+  }
+  function fRoiCls(roi, line){ return roi < line ? 'bad' : (roi < line * 1.15 ? 'wrn' : 'ok'); }
+  function fRenderChart(rows, line){
+    var W = 520, H = 156, padL = 32, padR = 10, padT = 16, padB = 24;
+    var lo = Math.min.apply(null, rows.map(function(r){ return r.roi; }).concat([line])) - 0.4;
+    var hi = Math.max.apply(null, rows.map(function(r){ return r.roi; })) + 0.4;
+    var maxC = Math.max.apply(null, rows.map(function(r){ return r.cost; }));
+    function x(i){ return padL + (W - padL - padR) * (i + 0.5) / rows.length; }
+    function y(v){ return padT + (H - padT - padB) * (1 - (v - lo) / (hi - lo)); }
+    var bw = Math.max(3, (W - padL - padR) / rows.length * 0.52);
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '">';
+    rows.forEach(function(r, i){
+      var bh = (H - padT - padB) * 0.55 * r.cost / maxC;
+      svg += '<rect x="' + (x(i) - bw / 2).toFixed(1) + '" y="' + (H - padB - bh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" fill="#e4eefb"/>';
+    });
+    var lineY = y(line).toFixed(1);
+    svg += '<line x1="' + padL + '" y1="' + lineY + '" x2="' + (W - padR) + '" y2="' + lineY + '" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4 3"/>'
+      + '<text x="' + padL + '" y="' + (lineY - 4) + '" fill="#dc5a5a">盈亏线 ' + line + '</text>';
+    var pts = rows.map(function(r, i){ return x(i).toFixed(1) + ',' + y(r.roi).toFixed(1); }).join(' ');
+    svg += '<polyline fill="none" stroke="#4578be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="' + pts + '"/>';
+    var step = Math.ceil(rows.length / 8);
+    rows.forEach(function(r, i){ if(i % step === 0 || i === rows.length - 1) svg += '<text x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">' + r.t + '</text>'; });
+    var last = rows[rows.length - 1];
+    svg += '<circle cx="' + x(rows.length - 1).toFixed(1) + '" cy="' + y(last.roi).toFixed(1) + '" r="3.5" fill="#fff" stroke="' + (last.roi < line ? '#dc5a5a' : '#4578be') + '" stroke-width="2"/>';
+    svg += '<rect x="' + (W - 150) + '" y="4" width="9" height="9" rx="2" fill="#e4eefb"/><text x="' + (W - 137) + '" y="12">消耗</text>'
+      + '<line x1="' + (W - 92) + '" y1="8" x2="' + (W - 76) + '" y2="8" stroke="#4578be" stroke-width="2"/><text x="' + (W - 70) + '" y="12">投产比</text>';
+    svg += '</svg>';
+    document.getElementById('fChart').innerHTML = svg;
+  }
+  function fRenderTable(rows, line){
+    var html = '<div class="scroll"><table><thead><tr><th>时段</th><th class="r">支付投产比</th><th class="r">成交金额</th><th class="r">消耗</th><th class="r">点击量</th><th class="r">转化率</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      html += '<tr><td><b>' + r.t + '</b></td><td class="r ' + fRoiCls(r.roi, line) + '">' + r.roi.toFixed(1) + '</td><td class="r">¥' + r.gmv.toLocaleString() + '</td><td class="r">¥' + r.cost.toLocaleString() + '</td><td class="r">' + r.clk.toLocaleString() + '</td><td class="r">' + r.cvr + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('fTable').innerHTML = html;
+  }
+  function fRenderAll(){
+    if(!curFile) return;
+    var rows = fGranMode === 'day' ? fGenDaily(curFile) : fGenHourly(curFile);
+    fRenderChart(rows, parseFloat(curFile.line));
+    fRenderTable(rows, parseFloat(curFile.line));
+  }
+  document.getElementById('fGran').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    fGranMode = b.getAttribute('data-g');
+    var dw = document.getElementById('fDateWrap');
+    dw.style.display = fGranMode === 'hour' ? '' : 'none';
+    if(fGranMode === 'hour'){
+      var sel = document.getElementById('fDate');
+      if(!sel.options.length){ ['06/09 今天','06/08','06/07','06/06','06/05','06/04','06/03'].forEach(function(d){ var o = document.createElement('option'); o.textContent = d; sel.appendChild(o); }); }
+    }
+    fRenderAll();
+  });
+  document.getElementById('fDate').addEventListener('change', fRenderAll);
+
+  /* ===== 工具条（原型切换态） ===== */
+  ['segType','segState'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.tabs button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+
+  /* 分页（原型切页态） */
+  document.getElementById('pgBtns').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b || b.disabled || !/^\d+$/.test(b.textContent)) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    var n = +b.textContent, info = document.querySelector('.pager .info');
+    var from = (n-1)*20 + 1, to = Math.min(n*20, 341);
+    info.innerHTML = '第 <b>' + from + '–' + to + '</b> 条 · 共 <b>341</b> 条';
+    this.children[0].disabled = (n === 1);
+  });
+
+  /* 跨页跳转 */
+  document.querySelectorAll('[data-goto]').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      try{ parent.postMessage({type:'goto', view: el.getAttribute('data-goto')}, '*'); }catch(err){}
+    });
+  });
+})();
+</script>
+</body>
+</html>

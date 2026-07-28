@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 智能投手</title>
+<!-- 系统字体栈，无远程字体依赖 -->
+<style>
+:root{
+  --primary-900:#1e3664;--primary-800:#274882;--primary-700:#3562a6;--primary-600:#4578be;--primary-500:#5b91d4;--primary-400:#7dade2;--primary-300:#a3c6ed;--primary-200:#c8ddf5;--primary-100:#e4eefb;--primary-50:#f1f6fd;--primary-0:#f8fafe;
+  --gray-900:#0f172a;--gray-800:#1e293b;--gray-700:#334155;--gray-600:#475569;--gray-500:#64748b;--gray-400:#94a3b8;--gray-300:#cbd5e1;--gray-200:#e2e8f0;--gray-100:#f1f5f9;--gray-50:#f8fafc;
+  --success:#22a67a;--success-light:#f0fdf6;--warning:#e09422;--danger:#dc5a5a;--info:#5090d3;--info-light:#f4f9fd;
+  --card-bd:rgba(15,23,42,.07);
+  --shadow-card:0 1px 3px rgba(15,23,42,.04), 0 8px 24px -14px rgba(30,54,100,.12);
+  --shadow-float:0 2px 6px rgba(15,23,42,.05), 0 16px 36px -16px rgba(30,54,100,.20);
+  --num:'Manrope',-apple-system,'PingFang SC',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.9,.28,1);
+  --hair:rgba(148,163,184,.22);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;display:flex;flex-direction:column;color:var(--gray-800);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  background:#f7f9fc;
+  background-image:radial-gradient(120% 42% at 50% -10%, rgba(91,145,212,.10), transparent 62%)}
+
+/* ===== 头部 ===== */
+.ad-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--hair);background:rgba(247,249,252,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.cap-orb{position:relative;isolation:isolate;width:36px;height:36px;border-radius:11px;font-size:14.5px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;background:linear-gradient(140deg,var(--primary-400),var(--primary-700));box-shadow:0 5px 14px -5px rgba(69,120,190,.6),inset 0 1px 1px rgba(255,255,255,.45);animation:orbBreath 4.5s var(--ease) infinite}
+.cap-orb::before{content:'';position:absolute;inset:-2.5px;border-radius:13.5px;background:conic-gradient(from 0deg,var(--primary-300),var(--primary-500),var(--primary-200),var(--primary-500),var(--primary-300));filter:blur(6px);opacity:.38;z-index:-1;animation:orbSpin 7s linear infinite}
+@keyframes orbBreath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+@keyframes orbSpin{to{transform:rotate(360deg)}}
+.ad-head .nm{font-size:13.5px;font-weight:700;color:var(--gray-900);letter-spacing:.01em}
+.ad-head .st{font-size:11px;color:var(--gray-500);display:flex;align-items:center;gap:5px;margin-top:2.5px}
+.ad-head .st .d{width:6px;height:6px;border-radius:50%;background:var(--success);animation:dotPulse 1.9s ease-out infinite}
+@keyframes dotPulse{0%{box-shadow:0 0 0 0 rgba(34,166,122,.5)}70%{box-shadow:0 0 0 5px rgba(34,166,122,0)}100%{box-shadow:0 0 0 0 rgba(34,166,122,0)}}
+.ad-head .st .foc{display:inline-flex;align-items:center;gap:5px;color:var(--primary-700);font-weight:600;background:var(--primary-100);padding:1px 4px 1px 8px;border-radius:99px}
+.ad-head .st .foc code{font-family:var(--mono);font-size:10.5px}
+.ad-head .st .foc .x{width:15px;height:15px;border-radius:99px;display:grid;place-items:center;cursor:pointer;color:var(--primary-500)}
+.ad-head .st .foc .x:hover{background:var(--primary-200);color:var(--primary-700)}
+.ad-close{margin-left:auto;width:30px;height:30px;border:0;background:transparent;border-radius:9px;color:var(--gray-400);cursor:pointer;display:grid;place-items:center;transition:background .15s,color .15s}
+.ad-close:hover{background:rgba(15,23,42,.05);color:var(--gray-700)}
+
+/* ===== 对话流：无框内容 + 头像栏 ===== */
+.cop-flow{flex:1;min-height:0;overflow-y:auto;padding:22px 20px 10px;display:flex;flex-direction:column;gap:4px}
+.cop-flow::-webkit-scrollbar{width:5px}.cop-flow::-webkit-scrollbar-thumb{background:rgba(148,163,184,.35);border-radius:3px}
+.turn{display:flex;gap:11px;margin:9px 0;animation:turnIn .45s var(--ease)}
+@keyframes turnIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.turn .t-av{flex:0 0 auto;width:26px;height:26px;border-radius:8.5px;background:linear-gradient(140deg,var(--primary-400),var(--primary-700));color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;box-shadow:0 3px 8px -3px rgba(53,98,166,.5);margin-top:1px}
+.turn .tc{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.turn.ai + .turn.ai{margin-top:-1px}
+.turn.ai + .turn.ai .t-av{visibility:hidden;height:0;margin:0}
+.ai-text{font-size:13.5px;line-height:1.75;color:var(--gray-800);max-width:100%;padding-top:2px}
+.ai-text b{color:var(--primary-800);font-weight:700;font-family:var(--num)}
+.turn.me{justify-content:flex-end}
+.me-pill{max-width:78%;font-size:13.5px;line-height:1.6;padding:9px 15px;border-radius:17px;border-bottom-right-radius:6px;background:linear-gradient(140deg,var(--primary-100),var(--primary-50));border:1px solid rgba(69,120,190,.14);color:var(--primary-900)}
+
+/* 槽位澄清候选 */
+.cand-row{display:flex;flex-wrap:wrap;gap:7px}
+.cand{height:30px;padding:0 13px;border-radius:99px;border:1px solid rgba(69,120,190,.22);background:#fff;color:var(--primary-700);font-size:12px;font-weight:600;cursor:pointer;transition:.18s var(--ease)}
+.cand:hover{background:var(--primary-50);border-color:var(--primary-300);transform:translateY(-1px)}
+
+/* ===== 卡片（固定模板渲染） ===== */
+.cop-card{background:#fff;border:1px solid var(--card-bd);border-radius:16px;overflow:hidden;max-width:100%;box-shadow:var(--shadow-card);transition:box-shadow .3s var(--ease)}
+.cop-card:hover{box-shadow:var(--shadow-float)}
+.cc-h{display:flex;align-items:center;gap:9px;padding:13px 16px 11px;font-size:13px;font-weight:700;color:var(--gray-900)}
+.cc-h .ico{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto}
+.cc-h .ico svg{width:13.5px;height:13.5px}
+
+/* 组件 JSON 视角（评审用：hover 出现，点开看 LLM 输出的选型+槽位） */
+.ui-meta{align-self:flex-end;margin-top:-4px;border:0;background:transparent;color:var(--gray-400);font-family:var(--mono);font-size:10px;cursor:pointer;padding:2px 4px;border-radius:6px;opacity:0;transition:.18s}
+.turn:hover .ui-meta{opacity:1}
+.ui-meta:hover{color:var(--primary-600);background:var(--primary-50)}
+.card-json{margin:0;background:#0f172a;color:#c8ddf5;font-family:var(--mono);font-size:10.5px;line-height:1.6;padding:12px 14px;border-radius:12px;overflow:auto;max-height:220px;white-space:pre}
+
+/* 简报/周报卡 */
+.cop-brief .cc-sum{display:flex;padding:4px 16px 15px}
+.cop-brief .cc-sum .f{flex:1;padding:0 14px;border-left:1px solid var(--gray-100)}
+.cop-brief .cc-sum .f:first-child{padding-left:0;border-left:0}
+.cop-brief .cc-sum b{display:block;font-size:22px;font-weight:800;color:var(--gray-900);font-family:var(--num);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.cop-brief .cc-sum span{display:block;font-size:10.5px;color:var(--gray-500);margin-top:3px}
+.cc-pend{border-top:1px solid var(--gray-100);padding:11px 16px 7px}
+.cc-pend-t{font-size:10.5px;font-weight:700;color:var(--gray-500);letter-spacing:.05em;display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.cc-pend-t .n{min-width:16px;height:16px;padding:0 5px;border-radius:99px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.cc-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100)}
+.cc-row:last-child{border-bottom:0}
+.cc-row .tx strong{display:block;font-size:12.5px;font-weight:650;color:var(--gray-800);line-height:1.45}
+.cc-row .tx span{display:block;font-size:11px;color:var(--gray-500);margin-top:2px}
+.cc-row .go{margin-left:auto;flex:0 0 auto;height:28px;padding:0 12px;border-radius:99px;border:1px solid var(--gray-200);background:#fff;font-size:11.5px;font-weight:630;color:var(--primary-600);cursor:pointer;white-space:nowrap;transition:.18s var(--ease)}
+.cc-row .go:hover{border-color:var(--primary-300);background:var(--primary-50);transform:translateY(-1px)}
+
+/* 数据条形卡 */
+.cop-data .cc-bars{padding:4px 16px 13px;display:flex;flex-direction:column;gap:10px}
+.cc-bar{display:grid;grid-template-columns:72px 1fr 56px;align-items:center;gap:10px;font-size:12px}
+.cc-bar .lb{color:var(--gray-600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cc-bar .track{height:6px;border-radius:3px;background:var(--gray-100);overflow:hidden}
+.cc-bar .fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--primary-400),var(--primary-600));transform-origin:left;animation:barGrow .7s var(--ease)}
+@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.cc-bar .vl{text-align:right;font-weight:700;color:var(--gray-900);font-family:var(--num);font-variant-numeric:tabular-nums}
+.cc-foot{display:flex;gap:16px;padding:11px 16px;border-top:1px solid var(--gray-100);font-size:11.5px;align-items:center;flex-wrap:wrap}
+.cc-foot a{color:var(--primary-600);text-decoration:none;font-weight:630;cursor:pointer}
+.cc-foot a:hover{text-decoration:underline}
+.cc-foot .note{color:var(--gray-500)}
+.cc-foot .good{color:var(--success);font-weight:630}
+
+/* 动作卡 */
+.cop-act .cc-h{padding-bottom:9px}
+.act-chip{font-size:10.5px;font-weight:700;padding:2.5px 9px;border-radius:99px;color:#fff;letter-spacing:.03em}
+.act-chip.pause{background:var(--danger)}.act-chip.roi{background:var(--primary-600)}.act-chip.budget{background:var(--warning)}.act-chip.add{background:var(--success)}.act-chip.del{background:#8a76c4}.act-chip.keep{background:var(--gray-400)}
+.act-obj{margin-left:auto;font-size:11px;color:var(--gray-400);font-weight:600;font-family:var(--mono)}
+.act-body{padding:0 16px 10px}
+.act-reason{font-size:12.5px;color:var(--gray-700);line-height:1.65}
+.act-gate{margin-top:9px;font-size:11px;color:#7a63b8;background:#f7f4fc;border:1px solid #ece5f8;border-radius:10px;padding:8px 11px;display:flex;align-items:center;gap:7px;line-height:1.5}
+.act-gate svg{width:13px;height:13px;flex:0 0 auto}
+.act-ev{margin-top:9px;background:var(--gray-50);border:1px solid var(--gray-100);border-radius:11px;padding:9px 12px;display:grid;grid-template-columns:1fr 1fr;gap:5px 18px}
+.act-ev .e{display:flex;justify-content:space-between;font-size:11.5px;color:var(--gray-600)}
+.act-ev .e b{color:var(--gray-900);font-weight:700;font-family:var(--num);font-variant-numeric:tabular-nums}
+.act-outs{display:flex;align-items:center;gap:9px;padding:12px 16px;border-top:1px solid var(--gray-100);flex-wrap:wrap}
+.act-outs .adopt{border:0;height:33px;padding:0 16px;border-radius:99px;font-size:12.5px;font-weight:660;cursor:pointer;background:linear-gradient(135deg,var(--primary-500),var(--primary-700));color:#fff;transition:.2s var(--ease);box-shadow:0 5px 13px -6px rgba(53,98,166,.55)}
+.act-outs .adopt.danger{background:linear-gradient(135deg,#e06f6f,var(--danger));box-shadow:0 5px 13px -6px rgba(220,90,90,.55)}
+.act-outs .adopt:hover{transform:translateY(-1px);box-shadow:0 9px 18px -7px rgba(53,98,166,.65)}
+.act-outs .adopt:active{transform:scale(.97)}
+.act-outs .skip{border:1px solid var(--gray-200);background:#fff;height:33px;padding:0 14px;border-radius:99px;font-size:12.5px;font-weight:600;color:var(--gray-600);cursor:pointer;transition:.18s}
+.act-outs .skip:hover{border-color:var(--gray-300);color:var(--gray-800)}
+.act-outs .tune{margin-left:auto;background:transparent;border:0;color:var(--primary-600);font-size:11.5px;font-weight:630;cursor:pointer;padding:0 2px}
+.act-outs .tune:hover{text-decoration:underline}
+.act-tune{padding:12px 16px;border-top:1px solid var(--gray-100)}
+.act-tune-t{font-size:12px;color:var(--gray-600);margin-bottom:9px}
+.act-done{padding:12px 16px;border-top:1px solid var(--gray-100);font-size:12px;display:flex;align-items:center;gap:8px;font-weight:620}
+.act-done.ok{color:var(--success)}.act-done.tuned{color:var(--warning)}.act-done.undo{color:var(--gray-500)}
+.act-done svg{width:14px;height:14px;flex:0 0 auto}
+.act-done .lnk{margin-left:auto;color:var(--primary-600);cursor:pointer;font-weight:630}
+.act-done .lnk:hover{text-decoration:underline}
+.act-state{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.02em}
+.act-state.auto{background:var(--gray-100);color:var(--gray-500)}
+.act-state.adopt{background:var(--primary-100);color:var(--primary-700)}
+.act-state.tuned{background:#fdf3e3;color:var(--warning)}
+
+/* 知识卡 */
+.cop-know .know-body{padding:2px 16px 9px;font-size:13px;line-height:1.7;color:var(--gray-700)}
+.cop-know .know-body b{color:var(--gray-900);font-weight:680}
+.cop-know .know-src{padding:0 16px 10px;font-size:11px;color:var(--gray-400);display:flex;align-items:center;gap:5px}
+.know-links{display:flex;gap:16px;padding:11px 16px;border-top:1px solid var(--gray-100);font-size:11.5px;flex-wrap:wrap}
+.know-links a{color:var(--primary-600);text-decoration:none;font-weight:630;cursor:pointer}
+.know-links a:hover{text-decoration:underline}
+
+/* 打字指示（无框） */
+.cop-typing{display:inline-flex;gap:4px;padding:8px 2px;width:fit-content;align-items:center}
+.cop-typing i{width:6px;height:6px;border-radius:50%;background:var(--primary-300);animation:adDot 1.2s ease-in-out infinite}
+.cop-typing i:nth-child(2){animation-delay:.15s}.cop-typing i:nth-child(3){animation-delay:.3s}
+@keyframes adDot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-2.5px)}}
+.typing-lbl{font-size:12px;color:var(--gray-500);margin-right:5px}
+.ai-text .cursor{display:inline-block;width:7px;height:14px;background:var(--primary-400);margin-left:1px;vertical-align:text-bottom;border-radius:1.5px;animation:blink 1s steps(2,start) infinite}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+
+/* 长思考面板 */
+.cop-think{background:linear-gradient(180deg,var(--primary-0),#fff);border:1px solid rgba(69,120,190,.14);border-radius:14px;padding:13px 16px 14px;max-width:100%}
+.think-head{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--gray-800)}
+.think-head b{font-weight:680}
+.think-spin{width:15px;height:15px;border-radius:50%;border:2px solid var(--primary-100);border-top-color:var(--primary-500);animation:spin .8s linear infinite;flex:0 0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.think-time{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--gray-400);font-variant-numeric:tabular-nums}
+.think-steps{margin:12px 0 12px;display:flex;flex-direction:column;gap:9px}
+.think-step{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--gray-400);transition:color .3s}
+.think-step .ts-ic{width:15px;height:15px;border-radius:50%;border:1.5px solid var(--gray-200);flex:0 0 auto;position:relative;transition:.3s}
+.think-step.active{color:var(--gray-800)}
+.think-step.active .ts-ic{border-color:var(--primary-200);border-top-color:var(--primary-600);animation:spin .8s linear infinite}
+.think-step.done{color:var(--gray-600)}
+.think-step.done .ts-ic{border-color:var(--success);background:var(--success)}
+.think-step.done .ts-ic:after{content:'';position:absolute;left:4.5px;top:2px;width:3.5px;height:7px;border:solid #fff;border-width:0 1.6px 1.6px 0;transform:rotate(45deg)}
+.think-bar{height:3px;border-radius:2px;background:rgba(69,120,190,.1);overflow:hidden}
+.think-bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary-400),var(--primary-600));border-radius:2px;transition:width .5s var(--ease)}
+.cop-think.collapsed{padding:9px 14px;background:transparent;border-color:var(--hair)}
+.think-done{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--gray-500);font-weight:600}
+.think-done svg{width:14px;height:14px;color:var(--success);flex:0 0 auto}
+
+/* ===== 底部：chips + composer ===== */
+.cop-chips{display:flex;gap:7px;padding:10px 20px 2px;overflow-x:auto;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 92%,transparent)}
+.cop-chips::-webkit-scrollbar{display:none}
+.cop-chip{flex:0 0 auto;height:30px;padding:0 14px;border-radius:99px;border:1px solid var(--hair);background:rgba(255,255,255,.75);font-size:12px;font-weight:570;color:var(--gray-600);cursor:pointer;white-space:nowrap;transition:.2s var(--ease);animation:turnIn .35s var(--ease) backwards}
+.cop-chip:nth-child(2){animation-delay:.03s}.cop-chip:nth-child(3){animation-delay:.06s}.cop-chip:nth-child(4){animation-delay:.09s}.cop-chip:nth-child(5){animation-delay:.12s}.cop-chip:nth-child(6){animation-delay:.15s}
+.cop-chip:hover{border-color:var(--primary-300);background:#fff;color:var(--primary-700);transform:translateY(-1.5px);box-shadow:0 7px 15px -8px rgba(53,98,166,.4)}
+.cop-chip:active{transform:translateY(0)}
+.cop-input{padding:10px 20px 16px}
+.cop-input .box{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--card-bd);border-radius:99px;padding:5px 5px 5px 18px;transition:border-color .2s,box-shadow .25s var(--ease);box-shadow:0 1px 3px rgba(15,23,42,.05), 0 10px 28px -18px rgba(30,54,100,.25)}
+.cop-input .box:focus-within{border-color:var(--primary-300);box-shadow:0 0 0 3.5px var(--primary-100), 0 12px 30px -16px rgba(53,98,166,.35)}
+.cop-input input{flex:1;border:0;outline:0;background:transparent;font-size:13.5px;padding:8px 0;color:var(--gray-900)}
+.cop-input input::placeholder{color:var(--gray-400)}
+.cop-send{flex:0 0 auto;width:36px;height:36px;border-radius:99px;border:0;background:linear-gradient(140deg,var(--primary-500),var(--primary-700));color:#fff;cursor:pointer;display:grid;place-items:center;transition:.2s var(--ease);box-shadow:0 5px 12px -5px rgba(53,98,166,.55)}
+.cop-send:hover{transform:scale(1.06);box-shadow:0 9px 20px -7px rgba(53,98,166,.65)}
+.cop-send:active{transform:scale(.94)}
+.cop-send svg{width:16px;height:16px}
+
+@media(prefers-reduced-motion:reduce){.turn,.cc-bar .fill,.cop-chip,.think-spin,.think-step.active .ts-ic,.cap-orb,.cap-orb::before{transition:none;animation:none}}
+</style>
+</head>
+<body>
+  <div class="ad-head">
+    <div class="cap-orb">投</div>
+    <div>
+      <div class="nm">AI 智能投手</div>
+      <div class="st" id="adStatus"></div>
+    </div>
+    <button class="ad-close" id="adClose" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="cop-flow" id="copFlow"></div>
+  <div class="cop-chips" id="copChips"></div>
+  <div class="cop-input">
+    <div class="box">
+      <input id="copText" placeholder="问账户 / 计划 / 店铺 / 素材，或让我处理…" autocomplete="off">
+      <button class="cop-send" id="copSend" aria-label="发送"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+    </div>
+  </div>
+<script>
+(function(){
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var flow = document.getElementById('copFlow');
+  var input = document.getElementById('copText');
+  var chipsBox = document.getElementById('copChips');
+  var statusEl = document.getElementById('adStatus');
+
+  function post(msg){ if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*'); }
+  document.getElementById('adClose').addEventListener('click', function(){ post({type:'zhushou-close'}); });
+
+  /* ============ 焦点：多轮对象连续性 ============ */
+  var focus = null;
+  var targets = ['计划 43002','素材 9017','计划 41866','店铺「时光里」','计划 42731','素材 9832'];
+  var ti = 0;
+  function renderStatus(){
+    if(focus){
+      statusEl.innerHTML = '<span class="d"></span>值班中 · <span class="foc">聚焦 <code>'+esc(focus.label)+'</code><span class="x" id="focX" title="退出聚焦">×</span></span>';
+      var x = document.getElementById('focX');
+      if(x) x.addEventListener('click', function(){ setFocus(null); });
+    }else{
+      statusEl.innerHTML = '<span class="d"></span>值班中 · 托管 341 条计划 · 巡检 <span id="adTarget">'+esc(targets[ti])+'</span>';
+    }
+  }
+  function setFocus(f){ focus = f; renderStatus(); }
+  if(!reduced){ setInterval(function(){ if(document.hidden||focus) return; ti=(ti+1)%targets.length; var t=document.getElementById('adTarget'); if(t) t.textContent=targets[ti]; }, 4200); }
+
+  /* ---------- 渲染工具 ---------- */
+  function esc(s){ return (''+s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function el(html){ var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+  function scrollDown(){ flow.scrollTop = flow.scrollHeight; }
+  function add(node){ flow.appendChild(node); scrollDown(); return node; }
+  function aiTurn(innerHtml){ return add(el('<div class="turn ai"><div class="t-av">投</div><div class="tc">'+innerHtml+'</div></div>')); }
+  function userMsg(text){ add(el('<div class="turn me"><div class="me-pill">'+esc(text)+'</div></div>')); }
+  function streamText(node, html, cb){
+    if(reduced){ node.innerHTML=html; if(cb)cb(); return; }
+    var i=0;
+    (function step(){
+      if(i>=html.length){ node.innerHTML=html; if(cb)cb(); return; }
+      var ch=html[i];
+      if(ch==='<'){ var j=html.indexOf('>',i); i=(j<0?html.length:j+1); }
+      else if(ch==='&'){ var k=html.indexOf(';',i); i=(k<0||k-i>8?i+1:k+1); }
+      else i++;
+      node.innerHTML=html.slice(0,i)+'<span class="cursor"></span>';
+      scrollDown();
+      setTimeout(step, ch==='<'?0:20);
+    })();
+  }
+  function aiText(html){ var m=aiTurn('<div class="ai-text"></div>'); streamText(m.querySelector('.ai-text'), html); return m; }
+  function typing(cb, delay, label){
+    var lbl = label ? '<span class="typing-lbl">'+esc(label)+'</span>' : '';
+    var t = aiTurn('<div class="cop-typing">'+lbl+'<i></i><i></i><i></i></div>');
+    setTimeout(function(){ if(t.parentNode) flow.removeChild(t); cb(); }, reduced ? 0 : (delay||720));
+  }
+  var ICO = {
+    brief:'<span class="ico" style="background:var(--primary-100);color:var(--primary-700)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg></span>',
+    data:'<span class="ico" style="background:var(--info-light);color:var(--info)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7"/><rect x="12" y="6" width="3" height="11"/><rect x="17" y="13" width="3" height="4"/></svg></span>',
+    shop:'<span class="ico" style="background:var(--success-light);color:var(--success)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5M4 9v11h16V9M4 9h16"/></svg></span>',
+    risk:'<span class="ico" style="background:#fdeef0;color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>',
+    book:'<span class="ico" style="background:#eef7f3;color:var(--success)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>'
+  };
+  var LOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+
+  /* ============ 组件注册表（封闭 8 类：LLM 只选型+填槽，布局由模板锁死，见 PRD §5.6） ============ */
+  function goBtn(g){ return g.ask ? '<button class="go" data-ask="'+esc(g.ask)+'">'+esc(g.label)+'</button>'
+                                  : '<button class="go" data-goto="'+esc(g.goto)+'">'+esc(g.label)+'</button>'; }
+  function pendRows(rows){ return rows.map(function(r){
+    return '<div class="cc-row"><div class="tx"><strong>'+r.t+'</strong><span>'+r.s+'</span></div>'+(r.go?goBtn(r.go):'')+'</div>'; }).join(''); }
+  function barRow(b){ return '<div class="cc-bar"><span class="lb">'+b[0]+'</span><span class="track"><span class="fill" style="width:'+b[1]+'%"></span></span><span class="vl">'+b[2]+'</span></div>'; }
+  function footLinks(links){ return (links||[]).map(function(l){
+    if(l.doc) return '<a data-doc="1">'+esc(l.label)+'</a>';
+    if(l.dim) return '<a data-dim="'+esc(l.dim)+'">'+esc(l.label)+'</a>';
+    return '<a data-goto="'+esc(l.goto)+'">'+esc(l.label)+'</a>'; }).join(''); }
+
+  var REGISTRY = {
+    /* 简报：三数 + 待拍板行 */
+    brief: function(d){
+      return '<div class="cop-card cop-brief">'+
+        '<div class="cc-h">'+ICO.brief+esc(d.title)+'</div>'+
+        '<div class="cc-sum">'+d.stats.map(function(s){ return '<div class="f"><b>'+s[0]+'</b><span>'+s[1]+'</span></div>'; }).join('')+'</div>'+
+        '<div class="cc-pend"><div class="cc-pend-t">'+esc(d.pendTitle)+(d.pendN?'<span class="n">'+d.pendN+'</span>':'')+'</div>'+pendRows(d.rows)+'</div></div>';
+    },
+    /* 风险清单 */
+    risk: function(d){
+      return '<div class="cop-card cop-brief">'+
+        '<div class="cc-h">'+ICO.risk+esc(d.title)+'</div>'+
+        '<div class="cc-pend" style="border-top:0;padding-top:2px">'+pendRows(d.rows)+'</div></div>';
+    },
+    /* 数据条形（素材Top/店铺/复盘共用骨架） */
+    bars: function(d){
+      var foot = '';
+      if(d.foot) foot = '<div class="cc-foot">'+(d.foot.note?'<span class="note'+(d.foot.good?' good':'')+'">'+d.foot.note+'</span>':'')+footLinks(d.foot.links)+'</div>';
+      return '<div class="cop-card cop-data">'+
+        '<div class="cc-h">'+(ICO[d.ico]||ICO.data)+esc(d.title)+'</div>'+
+        '<div class="cc-bars">'+d.bars.map(barRow).join('')+'</div>'+foot+'</div>';
+    },
+    /* 动作卡：done(已发生)/decide(待拍板)/undo(撤回确认)/tune(改值) */
+    act: function(o){
+      var ev = (o.ev||[]).map(function(e){ return '<div class="e"><span>'+e[0]+'</span><b>'+e[1]+'</b></div>'; }).join('');
+      var body = o.reason ? '<div class="act-body"><div class="act-reason">'+o.reason+'</div>'+
+        (o.gate?'<div class="act-gate">'+LOCK+o.gate+'</div>':'')+
+        (ev?'<div class="act-ev">'+ev+'</div>':'')+'</div>' : '';
+      var foot = '';
+      if(o.mode==='done'){
+        foot = '<div class="act-done '+(o.state==='tuned'?'tuned':'ok')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>'+o.doneText+'<span class="lnk" data-goto="view-zhixing">看执行日志</span></div>';
+      }else if(o.mode==='decide'){
+        foot = '<div class="act-outs" data-obj="'+esc(o.obj)+'" data-kind="'+o.kind+'">'+
+          '<button class="adopt'+(o.irreversible?' danger':'')+'">'+(o.primary||'采纳，交给我执行')+'</button>'+
+          '<button class="skip">这次先不动</button><button class="tune">查看数据·调整 →</button></div>';
+      }else if(o.mode==='undo'){
+        foot = '<div class="act-outs" data-undo="1"><button class="adopt">确认撤回，恢复投放</button><button class="skip">先不动</button></div>';
+      }else if(o.mode==='tune'){
+        foot = '<div class="act-tune"><div class="act-tune-t">'+o.tuneText+'</div><div class="cand-row">'+
+          o.tuneOptions.map(function(v){ return '<button class="cand" data-tune="'+esc(v)+'">'+esc(v)+'</button>'; }).join('')+'</div></div>';
+      }
+      return '<div class="cop-card cop-act">'+
+        '<div class="cc-h"><span class="act-chip '+o.kind+'">'+o.label+'</span><span class="act-obj">'+o.obj+'</span></div>'+body+foot+'</div>';
+    },
+    /* 知识卡：答案 + 来源 + 深链 */
+    know: function(o){
+      return '<div class="cop-card cop-know">'+
+        '<div class="cc-h">'+ICO.book+esc(o.title)+'</div>'+
+        '<div class="know-body">'+o.body+'</div>'+
+        '<div class="know-src">📎 来源：'+esc(o.src)+'（可核验）</div>'+
+        '<div class="know-links">'+footLinks(o.links)+'</div></div>';
+    },
+    /* 周报卡 */
+    weekly: function(d){
+      return '<div class="cop-card cop-brief">'+
+        '<div class="cc-h">'+ICO.book+esc(d.title)+'</div>'+
+        '<div class="cc-sum">'+d.stats.map(function(s){ return '<div class="f"><b>'+s[0]+'</b><span>'+s[1]+'</span></div>'; }).join('')+'</div>'+
+        '<div class="cc-pend"><div class="cc-pend-t">'+esc(d.pendTitle)+'</div>'+pendRows(d.rows)+'</div>'+
+        '<div class="know-links">'+footLinks(d.links)+'</div></div>';
+    }
+    /* 第 7/8 类：复盘=bars 变体；澄清候选 cand 为无框内联，见 respond() */
+  };
+
+  /* ---------- 统一渲染器：吃"LLM 输出"的 envelope，按注册表渲染 ---------- */
+  /* envelope = { say, ui:{component,data}, cand:[...], focus, chips } */
+  function respond(env){
+    if(env.say) aiText(env.say);
+    if(env.cand){ aiTurn('<div class="ai-text">'+candRow(env.cand)+'</div>'); }
+    if(env.ui){
+      var m = aiTurn('');
+      var tc = m.querySelector('.tc');
+      tc.appendChild(el(REGISTRY[env.ui.component](env.ui.data)));
+      /* 评审视角：hover 出现「⌗ 组件 · JSON」，点开看 LLM 的选型+槽位输出 */
+      var meta = el('<button class="ui-meta" title="查看该卡的组件选型与槽位 JSON">⌗ '+env.ui.component+' · JSON</button>');
+      meta.addEventListener('click', function(){
+        var pre = tc.querySelector('.card-json');
+        if(pre){ pre.remove(); return; }
+        var plain = JSON.parse(JSON.stringify(env.ui, function(k,v){ return typeof v==='string' ? v.replace(/<[^>]+>/g,'') : v; }));
+        tc.appendChild(el('<pre class="card-json">'+esc(JSON.stringify(plain, null, 2))+'</pre>'));
+        scrollDown();
+      });
+      tc.appendChild(meta);
+      scrollDown();
+    }
+    if('focus' in env) setFocus(env.focus);
+    if(env.chips) setChips(env.chips);
+  }
+
+  /* ---------- 槽位数据（demo 静态样例；生产由取数服务填充） ---------- */
+  var D = {
+    brief: function(title){ return { title:title||'今日简报 · 07/14 09:00',
+      stats:[['268','今日执行动作'],['6','持续亏损已暂停'],['1,204','今日巡检']],
+      pendTitle:'等你拍板', pendN:3, rows:[
+        {t:'计划 41203 连续 2 天逼近盈亏线', s:'建议下调目标投产比，进入观察', go:{label:'去处理', goto:'view-zhenduan'}},
+        {t:'素材 8842 转化衰减', s:'建议删除并补位新素材', go:{label:'去处理', goto:'view-zhenduan'}},
+        {t:'7 条高消耗计划未托管', s:'夜间无人盯盘，建议交给我', go:{label:'去托管', goto:'view-tuoguan'}}]}; },
+    risk: { title:'当前有风险的计划 · 3 条', rows:[
+        {t:'计划 42108 · 已持续亏损', s:'连续多周期低于盈亏线，我已暂停', go:{label:'看依据', ask:'为什么暂停了计划 42108'}},
+        {t:'计划 41203 · 逼近盈亏线', s:'建议下调目标投产比进入观察', go:{label:'去处理', goto:'view-zhenduan'}},
+        {t:'素材 8842 · 转化衰减', s:'建议删除并补位', go:{label:'去处理', ask:'删除素材 8842'}}]},
+    mat: { title:'素材消耗 Top5 · 近 7 天', ico:'data',
+      bars:[['素材 9017',100,'¥12.4w'],['素材 8842',72,'¥8.9w'],['素材 9832',58,'¥7.2w'],['素材 8801',41,'¥5.1w'],['素材 9120',33,'¥4.1w']],
+      foot:{links:[{label:'切转化维度',dim:'转化'},{label:'切投产比',dim:'投产比'},{label:'投放成果 →',goto:'view-chengguo'}]}},
+    shop: { title:'店铺「时光里」· 今日', ico:'shop',
+      bars:[['消耗',88,'¥58.6w'],['成交',81,'¥312w'],['投产比',67,'5.32'],['在投计划',54,'127 条']],
+      foot:{note:'● 健康度良好', good:true, links:[{label:'看计划明细 →',goto:'view-tuoguan'}]}},
+    review: { title:'本周复盘 · 07/08–07/14', ico:'data',
+      bars:[['暂停',100,'42 次'],['调投产比',66,'28 次'],['改预算',48,'20 次'],['追投',40,'17 次'],['删除',19,'8 次']],
+      foot:{note:'维持现状 1,536 次（巡检后判断不动）', links:[{label:'看执行日志 →',goto:'view-zhixing'}]}},
+    paused: { kind:'pause', label:'暂停', obj:'计划 42108', mode:'done', state:'auto',
+      reason:'连续多个巡检周期投产比低于盈亏线、且消耗持续，命中<b>持续亏损</b>判定，我已在 08:12 自动暂停。',
+      ev:[['当前投产比','2.10'],['店铺盈亏线','3.40'],['已消耗','¥1.86w'],['成交','¥3.9k']],
+      doneText:'已自动暂停（L2 授权内 · 可核验可撤回）'},
+    addMat: { kind:'add', label:'追投', obj:'素材 9017', mode:'decide', primary:'采纳，交给我执行',
+      reason:'转化连续 3 天稳定、投产比稳稳高于盈亏线，建议追投放量 <b>¥2.0w</b>。为何不更多：追投过猛容易把投产比拉下来，先稳一手、跑稳再加。',
+      ev:[['近 3 日投产比','7.10'],['店铺盈亏线','3.40'],['转化率','环比 +6%'],['建议追投','¥2.0w']]},
+    delMat: function(id){ return { kind:'del', label:'删除', obj:'素材 '+id, mode:'decide', primary:'采纳，删除素材', irreversible:true,
+      reason:'素材 '+id+' 转化连续衰减、投产比跌破盈亏线且无回升迹象，建议删除并补位新素材。',
+      gate:'删除素材属不可逆动作，默认需你拍板 —— 即使在 L2 授权内我也不会自动删。',
+      ev:[['近 3 日投产比','2.30'],['店铺盈亏线','3.40'],['转化率','环比 −34%']]}; },
+    tune: { kind:'add', label:'追投 · 调整金额', obj:'素材 9017', mode:'tune',
+      tuneText:'原建议 ¥2.0w，选一个新金额，我按调整后采纳执行：', tuneOptions:['¥1.5w','¥2.0w（原值）','¥2.8w']},
+    weekly: { title:'上周周报 · 07/08–07/14 · 7 账户',
+      stats:[['¥386w','周消耗'],['4.8','支付投产比'],['82%','盈利消耗占比']],
+      pendTitle:'本周我执行 115 个动作', rows:[
+        {t:'暂停 42 · 追投 17 · 调投产比 28 · 改预算 20 · 删除 8', s:'另维持现状 1,536 次'},
+        {t:'夜间兜底 23 次 · 追投后守住盈亏线 88%', s:'人工撤回 2 次（误杀率 0.7%）'}],
+      links:[{label:'看完整周报 →',goto:'view-zhixing'},{label:'导出给老板 →',doc:true}]},
+    know: {
+      breakeven:{ title:'怎么设盈亏线', src:'产品手册 · 目标设定 §2',
+        body:'盈亏线（盈亏投产比）就是你的<b>保本投产比</b>，由售价 / 成本 / 退货率算出。在<b>目标设定</b>页可逐条计划设，也能用页里的盈亏计算器自动算。设好后我按它止损、放量。',
+        links:[{label:'去目标设定设置 →',goto:'view-sheding'},{label:'看手册全文 →',doc:true}]},
+      night:{ title:'夜间止损在哪开', src:'产品手册 · 托管与授权 §4',
+        body:'在<b>目标设定 › 账户配置</b>里，每个账户有独立的「夜间紧急止损」开关。打开后，夜间无人盯盘时我可在授权内直接止损。',
+        links:[{label:'去账户配置 →',goto:'view-sheding'},{label:'看手册全文 →',doc:true}]},
+      roi:{ title:'什么是目标投产比', src:'产品手册 · 名词 §1',
+        body:'目标投产比是我操作千川出价 / 消耗节奏的<b>旋钮</b>——不是你设的保本线（那是盈亏线），也不是实际结果（那是支付投产比）。我调它，是为了让支付投产比尽量跑在盈亏线之上、同时把量顶上去。',
+        links:[{label:'看投放成果 →',goto:'view-chengguo'},{label:'看手册全文 →',doc:true}]}
+    }
+  };
+
+  /* ============ 意图路由（封闭集 + 槽位 + 焦点）→ 产出 envelope ============ */
+  var CAND_MAT = [['素材 9017','追投素材 9017'],['素材 9832','追投素材 9832'],['素材 8801','追投素材 8801']];
+  var CAND_PLAN = [['计划 42108','为什么暂停了计划 42108'],['计划 41203','暂停计划 41203'],['计划 41866','暂停计划 41866']];
+  function candRow(list){ return '<div class="cand-row">'+list.map(function(c){ return '<button class="cand" data-ask="'+esc(c[1])+'">'+esc(c[0])+'</button>'; }).join('')+'</div>'; }
+  function h(fn){ return fn; }
+
+  function route(text){
+    var t = text;
+    var deixis = focus && /(它|这条|那条|这个|那个|刚才|上面|这计划|这素材|这条计划|这个素材|这家店)/.test(t);
+    var f = deixis ? focus : null;
+
+    /* --- 简报 / 概况 --- */
+    if(/日报|简报|概况|概览|怎么样了|现在.*(如何|怎么|状况)|今天.*(如何|怎么|干了|做了)/.test(t))
+      return h(function(){ respond({ say:'值班中，今天已执行 <b>268</b> 个动作、暂停 6 条持续亏损计划，账户整体安全。这是当前简报：',
+        ui:{component:'brief', data:D.brief()}, focus:null, chips:CH_BRIEF }); });
+
+    /* --- 知识问答（RAG）；须在「盈亏线解释」前 --- */
+    if(/怎么设|怎么开|怎么弄|怎么算|如何设|如何开|在哪设|在哪开|在哪配|什么是|是什么|夜间止损|目标投产比|名词|看不懂|不会设/.test(t)){
+      var topic = /夜间|止损.*(开|哪)/.test(t) ? 'night' : (/目标投产比|什么是|是什么|名词/.test(t) ? 'roi' : 'breakeven');
+      return h(function(){ respond({ say:'我从手册里查到了 👇',
+        ui:{component:'know', data:D.know[topic]}, focus:null,
+        chips:['夜间止损在哪开','什么是目标投产比','去目标设定设置'] }); });
+    }
+
+    /* --- 周报生成（长任务：>10s 分步面板） --- */
+    if(/周报|上周.*报|导出.*周报|老板.*周报|生成.*周报/.test(t))
+      return h(function(){
+        thinkSteps('正在生成上周周报', [
+          {label:'拉取上周投放数据 · 7 账户', d:2600},
+          {label:'核对盈亏达成与动作账本', d:3200},
+          {label:'汇总夜间兜底与稳定性', d:2800},
+          {label:'生成周报', d:2400}
+        ], function(){
+          respond({ say:'上周周报好了 👇 7 个账户整体盈利消耗占比 <b>82%</b>，我执行了 115 个动作、夜间兜底 23 次，账户稳。',
+            ui:{component:'weekly', data:D.weekly}, focus:null,
+            chips:['夜间兜底都做了啥','哪个账户最该扩托管','导出给老板'] });
+        });
+      });
+
+    /* --- 复盘总结（纯读，不做反事实） --- */
+    if(/这周|本周|复盘|总结|干了啥|做了什么|这个月|最近.*(干|做)|都做了/.test(t))
+      return h(function(){ respond({ say:'本周我一共执行了 <b>115</b> 个动作，分解在这（只报做过的，不替你算没发生的账）：',
+        ui:{component:'bars', data:D.review}, focus:null,
+        chips:['这周暂停了哪些','看执行日志','哪些计划有风险'] }); });
+
+    /* --- 风险清单 --- */
+    if(/哪些.*(风险|问题|亏损|不行|拖后腿)|风险.*计划|持续亏损.*还有|还有.*(持续亏损|亏损|风险)/.test(t))
+      return h(function(){ respond({ say:'当前我盯出 <b>3</b> 条需要关注的计划，按严重度排：',
+        ui:{component:'risk', data:D.risk}, focus:null,
+        chips:['为什么暂停了计划 42108','把风险计划都交给你处理','看智能优化 →'] }); });
+
+    /* --- 为什么暂停（解释类） --- */
+    if(/为什么.*(暂停|停|关)|42108|(暂停|停).*(原因|依据|理由)/.test(t) || (f&&f.id==='42108'&&/为什么|依据|原因/.test(t)))
+      return h(function(){ respond({ say:'计划 <b>42108</b> 命中<b>持续亏损</b>判定，我已自动暂停。依据如下：',
+        ui:{component:'act', data:D.paused},
+        focus:{kind:'plan',id:'42108',label:'计划 42108'}, chips:CH_PAUSED }); });
+
+    /* --- 撤回 / 恢复（需焦点计划；无则澄清） --- */
+    if(/撤回|恢复|开回来|重新投|重启/.test(t)){
+      if(f&&f.kind==='plan') return h(function(){ respond({
+        say:'可以。'+f.label+' 是我在 L2 授权内自动暂停的，<b>可核验可撤回</b>。撤回后它会立即恢复投放，我继续盯——若再次持续亏损我会再拦一次。确认撤回？',
+        ui:{component:'act', data:{kind:'pause', label:'撤回暂停', obj:f.label, mode:'undo'}},
+        chips:['为什么会判成持续亏损','看执行日志 →','还有哪些暂停了'] }); });
+      return h(function(){ respond({ say:'撤回哪条计划？我今天自动暂停了这几条，点一条我给你恢复：', cand:CAND_PLAN }); });
+    }
+
+    /* --- 盈亏线解释（纯文本形态） --- */
+    if(/盈亏线|3\.40|保本|盈亏投产比/.test(t))
+      return h(function(){ respond({ say:'店铺「时光里」的盈亏线是 <b>3.40</b> —— 这是你在目标设定里按售价/成本/退货率算出的保本投产比，不是我设的。计划 42108 实际只跑到 2.10，低于它才判持续亏损。',
+        chips:['怎么改盈亏线','这条盈亏线合理吗','看计划档案 →'] }); });
+
+    /* --- 亏了多少（纯文本形态；只报已发生） --- */
+    if(/亏了多少|亏损金额|亏多少|这条亏|亏了/.test(t))
+      return h(function(){ respond({ say:'计划 42108 到暂停为止：已消耗 <b>¥1.86w</b>、成交 <b>¥3.9k</b>、实际投产比 2.10（盈亏线 3.40）。我只报已发生的数，不替它算「不停会亏多少」——那是没发生的世界线，不可信。',
+        chips:['为什么没更早暂停','看执行日志 →','还有哪些持续亏损'] }); });
+
+    /* --- 改追投金额：须排在「追投」前 --- */
+    if(/改.*金额|调.*金额|多追|少追|追.*万/.test(t) && (f&&f.kind==='material'))
+      return h(function(){ respond({ say:'可以，改金额后按<b>调整后采纳</b>记录（同方向偏离 &gt;30% 才算调整）。想追多少？',
+        ui:{component:'act', data:D.tune} }); });
+
+    /* --- 追投（缺对象则澄清） --- */
+    if(/追投|放量|加量/.test(t)){
+      var mm = t.match(/(素材)?\s*(90\d{2}|98\d{2}|88\d{2}|8801)/);
+      if(f&&f.kind==='material'&&!mm) mm=[0,0,f.id];
+      if(mm) return h(function(){ respond({ say:'素材 <b>9017</b> 转化稳定、投产比高于盈亏线，建议追投。方案在这，等你拍板：',
+        ui:{component:'act', data:D.addMat},
+        focus:{kind:'material',id:'9017',label:'素材 9017'}, chips:CH_ADD }); });
+      return h(function(){ respond({ say:'追投哪个素材？我筛出这几个转化稳、投产比高于盈亏线的，点一个我出方案：', cand:CAND_MAT }); });
+    }
+
+    /* --- 删除（红线：需拍板；缺对象则澄清） --- */
+    if(/删除|删掉|删/.test(t)){
+      var dm = t.match(/(素材)?\s*(88\d{2}|8842|90\d{2}|98\d{2})/);
+      if(f&&f.kind==='material'&&!dm) dm=[0,0,f.id];
+      if(dm) return h(function(){ respond({ say:'删除是不可逆动作，我不会自动删。这是依据，需你拍板：',
+        ui:{component:'act', data:D.delMat(dm[2])},
+        focus:{kind:'material',id:dm[2],label:'素材 '+dm[2]},
+        chips:['删了能恢复吗','换成暂停行不行','为什么判它衰减'] }); });
+      return h(function(){ respond({ say:'删除哪个素材？（提醒：删除默认需你拍板）点一个：',
+        cand:CAND_MAT.map(function(c){ return [c[0],'删除'+c[0]]; }) }); });
+    }
+
+    /* --- 素材消耗数据 --- */
+    if(/素材.*(消耗|数据|top|排名|维度)|看素材|消耗.*top/i.test(t))
+      return h(function(){ respond({ say:'近 7 天素材消耗 Top5（可切维度 / 时间档）：',
+        ui:{component:'bars', data:D.mat}, focus:null,
+        chips:['切转化维度','素材 9017 为什么消耗高','看投放成果 →'] }); });
+
+    /* --- 店铺 --- */
+    if(/店铺|时光里|这家店|大盘/.test(t))
+      return h(function(){ respond({ say:'店铺「时光里」今日整体健康：',
+        ui:{component:'bars', data:D.shop},
+        focus:{kind:'shop',id:'时光里',label:'店铺 时光里'},
+        chips:['看计划明细 →','哪些计划拖后腿','今天执行了哪些动作'] }); });
+
+    /* --- 托管 --- */
+    if(/托管|未托管|交给你|夜间|放权|授权/.test(t))
+      return h(function(){ respond({ say:'当前托管 <b>341</b> 条计划（L2 授权内自动执行、可核验可撤回）。还有 <b>7</b> 条高消耗计划未托管，夜间无人盯盘，建议交给我：',
+        ui:{component:'brief', data:D.brief('待托管 · 计划')}, focus:null,
+        chips:['哪 7 条没托管','交给你要注意什么','托管后能撤回吗'] }); });
+
+    /* --- 兜底（纯文本） --- */
+    return h(function(){ respond({ say:'我能帮你：看<b>账户 / 店铺 / 计划 / 素材</b>任意维度的数据、解释我做过的每一个动作、或直接替你处理（授权内自动执行，超权限或不可逆动作交你拍板）。试试下面的推荐问题 👇',
+      chips:CH_BRIEF }); });
+  }
+
+  /* ---------- 长思考面板（分步 + 计时 + 进度） ---------- */
+  function thinkSteps(title, steps, cb){
+    var start = Date.now();
+    var stepsHtml = steps.map(function(s,idx){ return '<div class="think-step" data-i="'+idx+'"><span class="ts-ic"></span>'+s.label+'</div>'; }).join('');
+    var m = aiTurn('<div class="cop-think"><div class="think-head"><span class="think-spin"></span><b>'+esc(title)+'</b><span class="think-time">0s</span></div>'+
+      '<div class="think-steps">'+stepsHtml+'</div><div class="think-bar"><span></span></div></div>');
+    var panel = m.querySelector('.cop-think');
+    var stepEls = panel.querySelectorAll('.think-step');
+    var timeEl = panel.querySelector('.think-time');
+    var barEl = panel.querySelector('.think-bar span');
+    var timer = reduced ? null : setInterval(function(){ timeEl.textContent = Math.round((Date.now()-start)/1000)+'s'; }, 250);
+    var i = 0;
+    if(stepEls[0]) stepEls[0].classList.add('active');
+    (function run(){
+      if(i>=steps.length){ finish(); return; }
+      setTimeout(function(){
+        stepEls[i].classList.remove('active'); stepEls[i].classList.add('done');
+        barEl.style.width = Math.round((i+1)/steps.length*100)+'%';
+        i++;
+        if(i<steps.length) stepEls[i].classList.add('active');
+        run();
+      }, reduced ? 0 : steps[i].d);
+    })();
+    function finish(){
+      if(timer) clearInterval(timer);
+      var secs = Math.max(1, Math.round((Date.now()-start)/1000));
+      panel.className = 'cop-think collapsed';
+      panel.innerHTML = '<div class="think-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>已思考 '+secs+'s · '+steps.length+' 步完成</div>';
+      scrollDown(); cb();
+    }
+  }
+
+  /* ============ 交互 ============ */
+  flow.addEventListener('click', function(e){
+    var ask = e.target.closest('[data-ask]'); if(ask){ send(ask.getAttribute('data-ask')); return; }
+    var dc = e.target.closest('[data-doc]'); if(dc){ toast(dc.closest('.cop-card'), '已打开手册对应章节'); return; }
+    var g = e.target.closest('[data-goto]'); if(g){ post({type:'zhushou-goto', view:g.getAttribute('data-goto')}); return; }
+    var dim = e.target.closest('[data-dim]'); if(dim){ toast(dim.closest('.cop-card'), '已切至「'+dim.getAttribute('data-dim')+'」维度'); return; }
+    var tn = e.target.closest('[data-tune]'); if(tn){ resolveTune(tn); return; }
+    var o = e.target.closest('.act-outs button'); if(o){ resolveAct(o); return; }
+  });
+  function toast(card, msg){ var head = card.querySelector('.cc-h'); if(head.dataset.busy) return; head.dataset.busy=1; var old=head.innerHTML; head.innerHTML = ICO.data+msg; setTimeout(function(){ head.innerHTML=old; head.dataset.busy=''; }, 1400); }
+
+  function resolveAct(btn){
+    var outs = btn.closest('.act-outs');
+    var cls = btn.className, kind = outs.getAttribute('data-kind');
+    if(/tune/.test(cls)){
+      if(kind==='add'){ outs.remove(); respond({ ui:{component:'act', data:D.tune} }); }
+      else post({type:'zhushou-goto', view:'view-zhenduan'});
+      return;
+    }
+    var done;
+    if(outs.getAttribute('data-undo')){
+      done = /adopt/.test(cls)
+        ? { c:'undo', t:'已撤回，计划 42108 恢复投放 · 我继续盯' }
+        : { c:'undo', t:'保持暂停，未撤回' };
+    }else if(/adopt/.test(cls)){
+      var map={add:'已采纳 · 追投素材 9017（¥2.0w）',del:'已采纳 · 删除素材（不可逆，已记档）',pause:'已采纳 · 暂停计划',roi:'已采纳 · 已调目标投产比',budget:'已采纳 · 已改预算'};
+      done = { c:'ok', state:'adopt', t:(map[kind]||'已采纳并执行') };
+    }else{
+      done = { c:'undo', t:'这次先不动，已记入建议复盘（不进动作记录）' };
+    }
+    var state = done.state==='adopt' ? '<span class="act-state adopt">采纳</span>' : '';
+    var node = el('<div class="act-done '+done.c+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>'+done.t+(state?'':'<span class="lnk" data-goto="view-zhixing">看执行日志</span>')+'</div>');
+    if(state){ node.appendChild(el(state)); }
+    outs.replaceWith(node); scrollDown();
+  }
+  function resolveTune(btn){
+    var val = btn.getAttribute('data-tune');
+    var isOrig = /原值/.test(val);
+    var tune = btn.closest('.act-tune');
+    var label = isOrig ? '按原值 ¥2.0w 执行' : '调整后采纳 · 追投素材 9017（'+val+'）';
+    var cls = isOrig ? 'ok' : 'tuned';
+    var state = isOrig ? '<span class="act-state adopt">采纳</span>' : '<span class="act-state tuned">调整后采纳</span>';
+    var node = el('<div class="act-done '+cls+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>'+label+'</div>');
+    node.appendChild(el(state));
+    tune.replaceWith(node); scrollDown();
+  }
+
+  /* ============ 动态推荐问题 ============ */
+  var CH_BRIEF   = ['生成上周周报','为什么暂停了计划 42108','哪些计划有风险','盈亏线怎么设','这周你都干了啥','店铺「时光里」怎么样'];
+  var CH_PAUSED  = ['能撤回吗','盈亏线为什么是 3.40','这条今天亏了多少','还有哪些持续亏损'];
+  var CH_ADD     = ['改追投金额','为什么只追 2 万','素材 9017 近期表现','还有哪些能追投'];
+  function setChips(list){
+    chipsBox.innerHTML='';
+    (list||CH_BRIEF).forEach(function(c){ var b = el('<button class="cop-chip"></button>'); b.textContent = c;
+      b.addEventListener('click', function(){ send(c); }); chipsBox.appendChild(b); });
+  }
+
+  /* ---------- 发送 ---------- */
+  function loadLabel(t){
+    if(/怎么设|怎么开|如何|什么是|是什么|夜间止损|目标投产比|名词|手册|不会设/.test(t)) return '正在翻手册…';
+    if(/为什么|依据|原因|亏了多少|亏损|亏多少/.test(t)) return '正在调取判定依据…';
+    if(/这周|本周|复盘|总结|干了啥|做了什么/.test(t)) return '正在汇总本周动作…';
+    if(/追投|放量/.test(t)) return '正在核算追投方案…';
+    if(/简报|概况|概览|风险|素材.*(消耗|top|数据)|店铺|时光里|大盘|消耗.*top|看素材/i.test(t)) return '正在查数仓…';
+    return null;
+  }
+  function send(text){ text=(text||'').trim(); if(!text) return; userMsg(text); input.value='';
+    if(/周报|上周.*报|导出.*周报|生成.*周报/.test(text)){ route(text)(); return; }
+    var lbl = loadLabel(text);
+    typing(function(){ route(text)(); }, lbl ? (reduced?0:900) : (reduced?0:520), lbl); }
+  document.getElementById('copSend').addEventListener('click', function(){ send(input.value); });
+  input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); send(input.value); } });
+
+  /* ---------- 开场主动简报 ---------- */
+  var booted = false;
+  function boot(){
+    if(booted) return; booted = true;
+    renderStatus();
+    typing(function(){
+      aiText('早上好 👋 我是你的 <b>AI 智能投手</b>。夜间我托管了 <b>341</b> 条计划、暂停 6 条持续亏损，账户整体安全。这是今日简报：');
+      typing(function(){ respond({ ui:{component:'brief', data:D.brief()}, chips:CH_BRIEF }); }, 520);
+    }, 480);
+  }
+  window.addEventListener('message', function(e){ if(e.data && e.data.type==='zhushou-open'){ boot(); if(input) input.focus(); } });
+  renderStatus();
+  if(window.parent===window) boot();
+})();
+</script>
+</body>
+</html>

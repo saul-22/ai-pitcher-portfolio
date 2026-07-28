@@ -1,0 +1,27 @@
+# System and editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+~$*
+
+# Local AI/editor configuration
+.claude/
+.vscode/
+.idea/
+CLAUDE.local.md
+
+# Secrets and environment
+.env
+.env.*
+*.pem
+*.key
+
+# Office source files are not public portfolio assets
+*.docx
+*.xlsx
+
+# Build and local server output
+node_modules/
+dist/
+.cache/

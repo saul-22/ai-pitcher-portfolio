@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 智能投手 · AI 产品经理作品集</title>
+<style>
+  :root{
+    --primary-600:#4578be;--primary-500:#5b91d4;--primary-50:#f1f6fd;
+    --ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;
+    --hair:#e2e8f0;--hair-2:#f1f5f9;
+    --warning:#e09422;--warning-light:#fefcf3;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;color:var(--ink);background:#fff;line-height:1.7}
+  .wrap{max-width:880px;margin:0 auto;padding:64px 32px 80px}
+  .badge{display:inline-block;background:var(--warning-light);border:1px solid #fde68a;color:#92400e;font-size:12px;padding:3px 10px;border-radius:9999px;margin-bottom:20px}
+  h1{font-size:34px;letter-spacing:-.5px;margin-bottom:10px}
+  .sub{color:var(--ink-2);font-size:16px;max-width:640px;margin-bottom:28px}
+  .cta{display:inline-block;background:linear-gradient(135deg,var(--primary-500),var(--primary-600));color:#fff;text-decoration:none;font-size:16px;font-weight:600;padding:13px 26px;border-radius:10px;box-shadow:0 4px 14px rgba(69,120,190,.35)}
+  .cta:hover{filter:brightness(1.06)}
+  .cta-sub{display:block;color:var(--ink-3);font-size:12.5px;margin-top:10px}
+  h2{font-size:20px;margin:48px 0 14px;padding-top:24px;border-top:1px solid var(--hair)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){.grid{grid-template-columns:1fr}}
+  .card{border:1px solid var(--hair);border-radius:12px;padding:16px 18px;text-decoration:none;color:var(--ink);display:block;transition:border-color .15s, background .15s}
+  .card:hover{border-color:var(--primary-500);background:var(--primary-50)}
+  .card b{display:block;font-size:15px;margin-bottom:4px}
+  .card span{color:var(--ink-2);font-size:13px}
+  ul{margin:8px 0 0 20px;color:var(--ink-2)}
+  li{margin-bottom:6px}
+  .foot{margin-top:56px;padding-top:20px;border-top:1px solid var(--hair);color:var(--ink-3);font-size:12.5px}
+  .foot a{color:var(--ink-3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="badge">演示数据 · 脱敏个人案例</div>
+  <h1>AI 智能投手</h1>
+  <p class="sub">7×24 托管巨量千川广告投放的 AI Agent：每小时巡检全店计划与素材，推荐并按授权执行动作，每一步可核验、可撤回。这是我作为 AI 产品经理的完整作品案例——从定位、Agent 授权机制、策略产品化，到亲手打磨的可点原型。</p>
+
+  <a class="cta" href="prototype/toudehao_final.html">▶ 直接打开可交互 Demo</a>
+  <span class="cta-sub">纯静态页面，六页完整可走 · 建议桌面浏览器打开（≥1280px 宽）</span>
+
+  <h2>三个关键产品判断</h2>
+  <ul>
+    <li><b>赋能优化师，不替代优化师</b> —— 用的人是优化师，替代叙事推不动产品。</li>
+    <li><b>钱证不了，就不要证</b> —— 反事实的"帮你赚了 ¥X"一戳就塌；只证明可核验事实：覆盖、动作、兜底、稳定性。</li>
+    <li><b>信任是设计出来的</b> —— L1/L2 分级授权、批次时效、删除默认拍板、Agent 允许认错认输。</li>
+  </ul>
+
+  <h2>作品文档</h2>
+  <div class="grid">
+    <a class="card" href="case-study/AI智能投手.md"><b>完整案例叙事</b><span>问题 → 洞察 → 决策 → 交付 → 验证 → 反思</span></a>
+    <a class="card" href="product/01-定位与价值逻辑.md"><b>产品定位与价值逻辑</b><span>双受众、两道锁、高价论证、鲁棒性</span></a>
+    <a class="card" href="product/02-决策与动作模型.md"><b>决策与动作模型</b><span>L1/L2、批次时效、三态标签、动作词表</span></a>
+    <a class="card" href="product/03-投放成果页PRD.md"><b>投放成果页 PRD</b><span>页面级 PRD 样例：结构、口径、文案纪律</span></a>
+    <a class="card" href="design/01-设计系统.md"><b>设计系统</b><span>Token、表格规范、"可点 ≠ 按钮"</span></a>
+    <a class="card" href="design/02-信任交互设计.md"><b>信任交互设计</b><span>数据抽屉、档案时间线、放权引导</span></a>
+    <a class="card" href="strategy/策略框架.md"><b>策略产品化框架</b><span>分层判定、防抖、冷启动保护（抽象版）</span></a>
+    <a class="card" href="reports/demo.html"><b>报告卡片 Demo</b><span>老板报告三场景切换（合成数据）</span></a>
+  </div>
+
+  <div class="foot">
+    本站为经过脱敏与重构的个人作品集。所有商家、账户、计划、金额与效果数据均为合成演示数据；生产实现与商业参数不在公开范围。<br>
+    <a href="NOTICE.md">数据与保密说明</a> · <a href="LICENSE.md">使用许可（保留所有权利）</a>
+  </div>
+</div>
+</body>
+</html>

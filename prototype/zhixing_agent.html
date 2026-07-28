@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>执行日志 · AI 智能投手</title>
+<style>
+/* 系统字体栈，无远程字体依赖 */
+
+:root{
+  --primary-700:#3562a6;--primary-600:#4578be;--primary-500:#5b91d4;
+  --primary-100:#e4eefb;--primary-50:#f1f6fd;
+  --ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;
+  --hair:#e2e8f0;--hair-2:#f1f5f9;
+  --success:#22a67a;--success-light:#f0fdf6;
+  --danger:#dc5a5a;--danger-light:#fef5f5;
+  --warning:#e09422;--warning-light:#fefcf3;
+  --num:'Manrope';--mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:#fff radial-gradient(840px 240px at 50% -120px,rgba(91,145,212,.13),transparent 70%) no-repeat}
+.page{max-width:1280px;margin:0 auto;padding:96px 40px 56px}
+.num{font-family:var(--num),var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:var(--primary-600);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+.reveal{opacity:0;transform:translateY(12px);animation:rise .7s cubic-bezier(.16,.84,.3,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.d1{animation-delay:.04s}.d2{animation-delay:.14s}.d3{animation-delay:.24s}
+
+/* ===== 头部 ===== */
+.lede{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:26px;border-bottom:1px solid var(--hair);margin-bottom:26px}
+.lede h1{font-size:22px;font-weight:740;letter-spacing:-.02em;line-height:1.45}
+.lede h1 em{font-style:normal;font-family:var(--num);color:var(--primary-600);font-variant-numeric:tabular-nums}
+.lede p{font-size:13px;color:var(--ink-3);margin-top:7px}
+.filters{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.tabs{display:flex;gap:2px;border:1px solid var(--hair);border-radius:9px;padding:2px;background:#fff}
+.tabs button{height:30px;border:0;background:transparent;border-radius:7px;padding:0 13px;color:var(--ink-3);font-size:12.5px;font-weight:620;cursor:pointer;font-family:inherit;transition:color .15s,background .15s}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{background:var(--ink);color:#fff}
+.search{height:32px;display:flex;align-items:center;gap:7px;border:1px solid var(--hair);border-radius:9px;padding:0 11px;background:#fff}
+.search input{border:0;outline:0;font-size:12.5px;font-family:inherit;color:var(--ink);width:150px;background:transparent}
+.search svg{color:var(--ink-3)}
+
+/* ===== 当日统计条 ===== */
+.ov{display:flex;margin-bottom:26px}
+.ov .f{padding:0 30px;border-left:1px solid var(--hair)}
+.ov .f:first-child{padding-left:0;border-left:0}
+.ov b{display:block;font-family:var(--num);font-size:25px;font-weight:760;font-variant-numeric:tabular-nums}
+.ov b.bad{color:var(--danger)}
+.ov span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:6px}
+
+/* ===== 筛选 ===== */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.seg{display:flex;gap:2px}
+.seg button{height:30px;border:1px solid transparent;background:transparent;border-radius:8px;padding:0 13px;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.seg button:hover{background:var(--hair-2)}
+.seg button.on{background:var(--primary-50);color:var(--primary-700);font-weight:650}
+.toolbar .sp{flex:1}
+
+/* ===== 日志流 ===== */
+.day{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);padding:22px 0 10px;display:flex;align-items:center;gap:12px}
+.day:after{content:"";flex:1;height:1px;background:var(--hair)}
+.log{border:1px solid var(--hair-2);border-radius:13px;margin-bottom:10px;background:#fff;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.log.major{border-color:var(--hair)}
+.log:hover{border-color:var(--primary-100)}
+.log-head{display:grid;grid-template-columns:52px 10px 1fr auto auto;gap:12px;align-items:center;padding:13px 16px;cursor:pointer}
+.log-head time{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.sev{width:8px;height:8px;border-radius:50%;background:var(--primary-500)}
+.log.risk .sev{background:var(--danger);box-shadow:0 0 0 4px var(--danger-light)}
+.log.gain .sev{background:var(--success);box-shadow:0 0 0 4px var(--success-light)}
+.log-what strong{font-size:13.5px;font-weight:660;line-height:1.45}
+.log-what .who{font-size:9px;font-weight:700;border-radius:4px;padding:1.5px 6px;margin-left:7px;vertical-align:1px;white-space:nowrap}
+.log-what .who.ai{color:var(--ink-3);background:var(--hair-2)}
+.log-what .who.you{color:var(--primary-600);background:var(--primary-50)}
+.log-what .who.adj{color:var(--warning);background:var(--warning-light)}
+.log-what span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:2px}
+.log-plan{font-size:11.5px;color:var(--ink-3);white-space:nowrap;text-align:right}
+.log-plan b{display:block;color:var(--ink-2);font-weight:620;font-size:12px}
+.chev{color:var(--ink-3);transition:transform .2s}
+.log.open .chev{transform:rotate(180deg)}
+/* 展开：动作前后状态 */
+.log-detail{display:none;border-top:1px solid var(--hair-2);padding:16px 16px 18px;background:#fafbfd}
+.log.open .log-detail{display:block}
+.ba{display:grid;grid-template-columns:1fr 36px 1fr;gap:14px;align-items:stretch;max-width:660px}
+.ba .col{border:1px solid var(--hair);border-radius:11px;background:#fff;padding:13px 15px}
+.ba .col .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--ink-3);margin-bottom:9px}
+.ba .row{display:flex;justify-content:space-between;font-size:12px;padding:3.5px 0}
+.ba .row span{color:var(--ink-3)}
+.ba .row b{font-family:var(--num);font-weight:680;font-variant-numeric:tabular-nums}
+.ba .row b.hl{color:var(--primary-600)}
+.ba .row b.bad{color:var(--danger)}
+.ba .row b.ok{color:var(--success)}
+.ba .mid{display:grid;place-items:center;color:var(--ink-3)}
+.verdict{display:inline-flex;align-items:baseline;gap:7px;margin-top:13px;font-size:12px;border-radius:8px;padding:7px 11px;line-height:1.5}
+.verdict.good{color:#147a57;background:var(--success-light)}
+.verdict.wait{color:var(--ink-2);background:var(--hair-2)}
+.verdict.bad{color:#b44;background:var(--danger-light)}
+/* 例行折叠组 */
+.routine{border:1px dashed var(--hair);border-radius:13px;margin-bottom:10px;background:#fafbfd}
+.routine-head{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-size:12.5px;color:var(--ink-2)}
+.routine-head:hover{color:var(--ink)}
+.routine-head b{font-family:var(--num);font-weight:720;color:var(--ink)}
+.routine-head .sp{flex:1}
+.routine-list{display:none;border-top:1px dashed var(--hair);padding:4px 16px 10px}
+.routine.open .routine-list{display:block}
+.routine.open .chev{transform:rotate(180deg)}
+.r-row{display:grid;grid-template-columns:52px 1fr auto;gap:12px;padding:8px 0;border-bottom:1px solid var(--hair-2);font-size:12px;align-items:baseline}
+.r-row:last-child{border-bottom:0}
+.r-row time{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.r-row .t{color:var(--ink-2)}
+.r-row .p{color:var(--ink-3);font-size:11px;white-space:nowrap}
+
+.pager{display:flex;align-items:center;gap:14px;padding:18px 2px 0;font-size:12.5px;color:var(--ink-3)}
+.pager .info b{font-family:var(--num);color:var(--ink-2);font-weight:650}
+.pager .sp{flex:1}
+.pg-btns{display:flex;gap:4px}
+.pg-btns button{min-width:30px;height:30px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;font-weight:620;color:var(--ink-2);cursor:pointer;font-family:var(--num);padding:0 8px}
+.pg-btns button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pg-btns button:disabled{opacity:.4;cursor:default}
+
+@media(max-width:760px){.page{padding:84px 18px 40px}.ov{flex-wrap:wrap;gap:16px 0}.ov .f{padding:0 18px}.ba{grid-template-columns:1fr}.ba .mid{transform:rotate(90deg);padding:4px 0}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="lede reveal d1">
+    <div>
+      <h1>我做过的每一步，都可以核验。</h1>
+      <p>每条动作都记录了执行前后的状态——点开任意一条对照看。</p>
+    </div>
+    <div class="filters">
+      <div class="tabs" role="tablist">
+        <button role="tab" class="on">今天</button><button role="tab">昨天</button><button role="tab">近 7 天</button>
+      </div>
+      <div class="search">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        <input type="text" placeholder="计划名 / ID">
+      </div>
+    </div>
+  </header>
+
+  <section class="ov reveal d2">
+    <div class="f"><b class="num">268</b><span>今日执行动作</span></div>
+    <div class="f"><b class="num bad">6</b><span>持续亏损已暂停</span></div>
+    <div class="f"><b class="num">3</b><span>经你确认执行</span></div>
+    <div class="f"><b class="num">1,204</b><span>巡检判断无需动作</span></div>
+  </section>
+
+  <section class="reveal d3">
+    <div class="toolbar">
+      <div class="seg" id="segWho">
+        <button class="on">全部</button>
+        <button>我自动 (L2)</button>
+        <button>经你确认 (L1)</button>
+      </div>
+      <div class="seg" id="segAct">
+        <button class="on">全部动作</button>
+        <button>暂停</button>
+        <button>调投产比</button>
+        <button>改预算</button>
+        <button>素材</button>
+      </div>
+      <span class="sp"></span>
+    </div>
+
+    <div class="day">今天 · 06/10</div>
+
+    <!-- 重要：风险动作 -->
+    <article class="log major risk">
+      <div class="log-head">
+        <time>08:12</time><span class="sev"></span>
+        <div class="log-what"><strong>调投产比 + 降预算<span class="who you">采纳</span></strong><span>连续 2 天逼近盈亏线，收紧观察</span></div>
+        <div class="log-plan"><b>夏季连衣裙-直播间引流</b>#41203</div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="log-detail">
+        <div class="ba">
+          <div class="col">
+            <div class="k">动作前 · 08:11</div>
+            <div class="row"><span>目标投产比</span><b>3.4</b></div>
+            <div class="row"><span>日预算</span><b>¥3,000</b></div>
+            <div class="row"><span>实际投产比</span><b class="bad">2.7</b></div>
+            <div class="row"><span>盈亏线</span><b>2.6</b></div>
+          </div>
+          <div class="mid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div>
+          <div class="col">
+            <div class="k">动作后 · 08:12</div>
+            <div class="row"><span>目标投产比</span><b class="hl">2.9</b></div>
+            <div class="row"><span>日预算</span><b class="hl">¥2,400</b></div>
+            <div class="row"><span>实际投产比</span><b>观察中</b></div>
+            <div class="row"><span>观察窗口</span><b>24h</b></div>
+          </div>
+        </div>
+        <span class="verdict wait">◷ 观察中 · 跌破盈亏线我会立即暂停并通知你 · <a href="#" data-goto="view-tuoguan">看这条计划的档案 →</a></span>
+      </div>
+    </article>
+
+    <article class="log major risk">
+      <div class="log-head">
+        <time>03:12</time><span class="sev"></span>
+        <div class="log-what"><strong>暂停计划<span class="who ai">我自动</span></strong><span>夜间持续亏损，L2 范围内直接执行</span></div>
+        <div class="log-plan"><b>夏凉被清仓-直播间</b>#42108</div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="log-detail">
+        <div class="ba">
+          <div class="col">
+            <div class="k">动作前 · 03:11</div>
+            <div class="row"><span>实际投产比</span><b class="bad">1.9</b></div>
+            <div class="row"><span>盈亏线</span><b>2.6</b></div>
+            <div class="row"><span>当日消耗</span><b>¥6,130</b></div>
+            <div class="row"><span>消耗速率</span><b class="bad">¥820/h 持续</b></div>
+          </div>
+          <div class="mid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div>
+          <div class="col">
+            <div class="k">动作后 · 03:12</div>
+            <div class="row"><span>计划状态</span><b class="hl">已暂停</b></div>
+            <div class="row"><span>继续消耗</span><b class="ok">已止住</b></div>
+            <div class="row"><span>通知</span><b>今早 08:00 已推送</b></div>
+          </div>
+        </div>
+        <span class="verdict good">↗ 已止损 · 凌晨无人值守时段，没有漏掉 · <a href="#" data-goto="view-tuoguan">看这条计划的档案 →</a></span>
+      </div>
+    </article>
+
+    <!-- 重要：放量动作 -->
+    <article class="log major gain">
+      <div class="log-head">
+        <time>08:15</time><span class="sev"></span>
+        <div class="log-what"><strong>放量：日预算 ¥2,000 → ¥2,800<span class="who adj">调整后采纳</span></strong><span>连续 3 天达标且预算提前花完 · 我建议 ¥2,600，你调整后执行</span></div>
+        <div class="log-plan"><b>凉感四件套-货架场</b>#43890</div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="log-detail">
+        <div class="ba">
+          <div class="col">
+            <div class="k">动作前 · 08:14</div>
+            <div class="row"><span>日预算</span><b>¥2,000</b></div>
+            <div class="row"><span>实际投产比</span><b class="ok">4.5</b></div>
+            <div class="row"><span>预算花完时间</span><b class="bad">15:00 前</b></div>
+          </div>
+          <div class="mid"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div>
+          <div class="col">
+            <div class="k">动作后 · 08:15</div>
+            <div class="row"><span>日预算</span><b class="hl">¥2,800</b></div>
+            <div class="row"><span>我的建议</span><b>¥2,600（你 +¥200）</b></div>
+            <div class="row"><span>放量规则</span><b>跌破 3.5 停止加量</b></div>
+            <div class="row"><span>下一步</span><b>稳了明天 → ¥3,200</b></div>
+          </div>
+        </div>
+        <span class="verdict wait">◷ 放量观察中 · <a href="#" data-goto="view-tuoguan">看这条计划的档案 →</a></span>
+      </div>
+    </article>
+
+    <!-- 例行折叠组 -->
+    <div class="routine" id="rt1">
+      <div class="routine-head">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l2.5 2.5"/></svg>
+        08:00–09:00 · 另有 <b>23</b> 次例行动作（调价 / 预算微调 / 素材权重）
+        <span class="sp"></span>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="routine-list">
+        <div class="r-row"><time>08:17</time><span class="t">追投素材 9412 ¥600/日，低效素材降权 <span class="who you" style="font-size:9px;font-weight:700;border-radius:4px;padding:1.5px 6px;color:var(--primary-600);background:var(--primary-50)">采纳</span></span><span class="p">防晒衣男款 #44102</span></div>
+        <div class="r-row"><time>08:09</time><span class="t">调目标投产比 3.1 → 3.2</span><span class="p">直播大场预热 #41866</span></div>
+        <div class="r-row"><time>08:06</time><span class="t">日预算 +¥200</span><span class="p">家居收纳-货架 #40021</span></div>
+        <div class="r-row"><time>08:04</time><span class="t">调目标投产比 2.9 → 3.0</span><span class="p">小风扇-直播间 #42588</span></div>
+        <div class="r-row"><time>08:02</time><span class="t">素材 7763 权重下调</span><span class="p">凉鞋女款 #43177</span></div>
+        <div class="r-row" style="color:var(--ink-3);grid-template-columns:1fr"><span class="t" style="color:var(--ink-3)">… 还有 18 次，真实环境分页加载</span></div>
+      </div>
+    </div>
+
+    <div class="routine" id="rt2">
+      <div class="routine-head">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        00:00–08:00 夜间 · <b>41</b> 次动作 · <b>1,204</b> 次巡检判断无需动作
+        <span class="sp"></span>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="routine-list">
+        <div class="r-row"><time>05:36</time><span class="t">暂停计划（连续 40 分钟跌破盈亏线）</span><span class="p">短袖清仓 #44217</span></div>
+        <div class="r-row"><time>02:54</time><span class="t">删除素材 9832（成交未跟上消耗）</span><span class="p">连衣裙引流 #40118</span></div>
+        <div class="r-row"><time>01:07</time><span class="t">调目标投产比（夜间消耗过快）</span><span class="p">直播间引流 #43002</span></div>
+        <div class="r-row" style="color:var(--ink-3);grid-template-columns:1fr"><span class="t" style="color:var(--ink-3)">… 还有 38 次，真实环境分页加载</span></div>
+      </div>
+    </div>
+
+    <div class="pager">
+      <span class="info">今天共 <b>268</b> 次动作 · <b>1,204</b> 次巡检</span>
+      <span class="sp"></span>
+      <div class="pg-btns" id="pgBtns">
+        <button disabled>‹</button><button class="on">1</button><button>2</button><button>3</button><button>›</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  /* 重要动作展开/收起 */
+  document.querySelectorAll('.log-head').forEach(function(h){
+    h.addEventListener('click', function(){ h.closest('.log').classList.toggle('open'); });
+  });
+  /* 例行组展开 */
+  document.querySelectorAll('.routine-head').forEach(function(h){
+    h.addEventListener('click', function(){ h.closest('.routine').classList.toggle('open'); });
+  });
+  /* 筛选与分页（原型切换态） */
+  ['segWho','segAct'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.addEventListener('click', function(){
+      document.querySelectorAll('.tabs button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+  document.getElementById('pgBtns').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b || b.disabled || !/^\d+$/.test(b.textContent)) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    this.children[0].disabled = (b.textContent === '1');
+  });
+  /* 跨页跳转 */
+  document.querySelectorAll('[data-goto]').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      try{ parent.postMessage({type:'goto', view: el.getAttribute('data-goto')}, '*'); }catch(err){}
+    });
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案例归档 · AI 智能投手</title>
+<style>
+/* 系统字体栈，无远程字体依赖 */
+
+:root{
+  --primary-700:#3562a6;--primary-600:#4578be;--primary-500:#5b91d4;
+  --primary-100:#e4eefb;--primary-50:#f1f6fd;
+  --ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;
+  --hair:#e2e8f0;--hair-2:#f1f5f9;
+  --success:#22a67a;--success-light:#f0fdf6;
+  --danger:#dc5a5a;--danger-light:#fef5f5;
+  --warning:#e09422;--warning-light:#fefcf3;
+  --num:'Manrope';--mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:#fff radial-gradient(840px 240px at 50% -120px,rgba(91,145,212,.13),transparent 70%) no-repeat}
+.page{max-width:1280px;margin:0 auto;padding:96px 40px 56px}
+.num{font-family:var(--num),var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:var(--primary-600);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+.reveal{opacity:0;transform:translateY(12px);animation:rise .7s cubic-bezier(.16,.84,.3,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.d1{animation-delay:.04s}.d2{animation-delay:.14s}.d3{animation-delay:.24s}
+
+.lede{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:26px;border-bottom:1px solid var(--hair);margin-bottom:24px}
+.lede h1{font-size:22px;font-weight:740;letter-spacing:-.02em;line-height:1.45}
+.lede p{font-size:13px;color:var(--ink-3);margin-top:7px}
+.lede .meta{font-size:12px;color:var(--ink-3);white-space:nowrap;padding-bottom:4px}
+.lede .meta b{font-family:var(--num);color:var(--ink-2);font-weight:680}
+
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.seg{display:flex;gap:2px}
+.seg button{height:30px;border:1px solid transparent;background:transparent;border-radius:8px;padding:0 13px;color:var(--ink-2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.seg button:hover{background:var(--hair-2)}
+.seg button.on{background:var(--primary-50);color:var(--primary-700);font-weight:650}
+.toolbar .sp{flex:1}
+.search{height:32px;display:flex;align-items:center;gap:7px;border:1px solid var(--hair);border-radius:9px;padding:0 11px;background:#fff}
+.search input{border:0;outline:0;font-size:12.5px;font-family:inherit;color:var(--ink);width:150px;background:transparent}
+.search svg{color:var(--ink-3)}
+
+/* ===== 案例卡 ===== */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.case{border:1px solid var(--hair);border-radius:15px;background:#fff;padding:18px 20px;display:flex;flex-direction:column;transition:border-color .15s,box-shadow .15s,transform .15s}
+.case:hover{border-color:var(--primary-100);box-shadow:0 12px 32px -18px rgba(30,54,100,.18);transform:translateY(-2px)}
+.c-top{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.c-tag{font-size:10.5px;font-weight:680;border-radius:5px;padding:3px 8px;white-space:nowrap}
+.c-tag.stop{color:var(--danger);background:var(--danger-light)}
+.c-tag.tune{color:var(--primary-600);background:var(--primary-50)}
+.c-tag.budget{color:var(--warning);background:var(--warning-light)}
+.c-tag.boost{color:var(--success);background:var(--success-light)}
+.c-tag.clean{color:#7c5cc4;background:#f7f4fd}
+.c-tag.hold{color:var(--ink-3);background:var(--hair-2)}
+.c-tag.night{color:#5b6b9b;background:#eef1fb}
+.c-src{font-size:10.5px;color:var(--ink-3)}
+.c-src.you{color:var(--primary-600)}
+.c-top time{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+.case h3{font-size:14.5px;font-weight:720;line-height:1.5;letter-spacing:-.01em}
+.case .plan{font-size:11.5px;color:var(--ink-3);margin-top:4px}
+.c-story{margin-top:13px;display:flex;flex-direction:column;gap:7px;font-size:12.5px;line-height:1.65;color:var(--ink-2)}
+.c-story .row{display:grid;grid-template-columns:38px 1fr;gap:10px}
+.c-story .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;color:var(--ink-3);padding-top:3px}
+.c-story b{font-weight:680;color:var(--ink)}
+.c-story .pos{color:var(--success);font-weight:680}
+.c-story .neg{color:var(--danger);font-weight:680}
+.c-foot{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:13px;border-top:1px solid var(--hair-2);font-size:12px}
+.c-foot .note{color:var(--ink-3);font-size:11.5px;flex:1;font-style:normal}
+
+.pager{display:flex;align-items:center;gap:14px;padding:20px 2px 0;font-size:12.5px;color:var(--ink-3)}
+.pager .info b{font-family:var(--num);color:var(--ink-2);font-weight:650}
+.pager .sp{flex:1}
+.pg-btns{display:flex;gap:4px}
+.pg-btns button{min-width:30px;height:30px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;font-weight:620;color:var(--ink-2);cursor:pointer;font-family:var(--num);padding:0 8px}
+.pg-btns button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pg-btns button:disabled{opacity:.4;cursor:default}
+
+@media(max-width:980px){.grid{grid-template-columns:1fr}}
+@media(max-width:760px){.page{padding:84px 18px 40px}.lede{flex-direction:column;align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="lede reveal d1">
+    <div>
+      <h1>值得记住的操盘时刻，都归了档。</h1>
+      <p>从计划档案和诊断里收藏的案例——下次遇到类似情况，你我都有得参考。</p>
+    </div>
+    <div class="meta">共 <b>24</b> 个案例 · 你收藏 <b>9</b> · 我标记 <b>15</b></div>
+  </header>
+
+  <div class="toolbar reveal d2">
+    <div class="seg" id="segTag">
+      <button class="on">全部</button>
+      <button>暂停</button>
+      <button>调投产比</button>
+      <button>改预算</button>
+      <button>追投</button>
+      <button>删除素材</button>
+      <button>维持现状</button>
+    </div>
+    <div class="seg" id="segSrc">
+      <button class="on">全部来源</button>
+      <button>你收藏的</button>
+      <button>我标记的</button>
+    </div>
+    <span class="sp"></span>
+    <div class="search">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+      <input type="text" placeholder="计划名 / 关键词">
+    </div>
+  </div>
+
+  <section class="grid reveal d3">
+
+    <article class="case">
+      <div class="c-top"><span class="c-tag stop">暂停</span><span class="c-tag night">夜间</span><span class="c-src">我标记的</span><time>06/10</time></div>
+      <h3>凌晨 03:12 拦下持续下滑的清仓计划</h3>
+      <div class="plan">夏凉被清仓-直播间 #42108</div>
+      <div class="c-story">
+        <div class="row"><span class="k">背景</span><span>清仓期计划波动大，两次收紧出价都没止住下滑</span></div>
+        <div class="row"><span class="k">动作</span><span>实际投产比跌到 <span class="neg">1.9</span>（盈亏线 2.6），凌晨无人值守，L2 范围内<b>直接暂停</b></span></div>
+        <div class="row"><span class="k">结果</span><span><span class="pos">止住继续消耗</span>，今早通知，全程无人工介入</span></div>
+      </div>
+      <div class="c-foot"><span class="note">清仓类计划建议默认 L2 + 更紧的盈亏线</span><a href="#" data-goto="view-tuoguan">看档案 →</a></div>
+    </article>
+
+    <article class="case">
+      <div class="c-top"><span class="c-tag hold">维持现状</span><span class="c-src you">你收藏的</span><time>06/05</time></div>
+      <h3>大场开播前，你否了我的收紧建议——你是对的</h3>
+      <div class="plan">夏季连衣裙-直播间引流 #41203</div>
+      <div class="c-story">
+        <div class="row"><span class="k">背景</span><span>点击率下滑，我建议收紧出价进入观察</span></div>
+        <div class="row"><span class="k">动作</span><span>你判断大场开播在即流量结构会变，<b>选择维持投放</b></span></div>
+        <div class="row"><span class="k">结果</span><span>大场当晚投产比 <span class="pos">4.1</span>，你的经验赢了我的数据</span></div>
+      </div>
+      <div class="c-foot"><span class="note">已学习：大场前 4 小时降低收紧建议的敏感度</span><a href="#" data-goto="view-tuoguan">看档案 →</a></div>
+    </article>
+
+    <article class="case">
+      <div class="c-top"><span class="c-tag budget">改预算</span><span class="c-src">我标记的</span><time>06/05</time></div>
+      <h3>分步放量：预算翻倍但投产比一点没掉</h3>
+      <div class="plan">凉感四件套-货架场 #43890</div>
+      <div class="c-story">
+        <div class="row"><span class="k">背景</span><span>连续达标且预算每天 15:00 前花完，量被卡住</span></div>
+        <div class="row"><span class="k">动作</span><span>¥1,600 → ¥2,000 → ¥2,600 <b>分三步加</b>，每步观察一天</span></div>
+        <div class="row"><span class="k">结果</span><span>消耗 <span class="pos">+62%</span>，投产比稳在 <span class="pos">4.5</span>，没有扰动模型</span></div>
+      </div>
+      <div class="c-foot"><span class="note">放量节奏参考：单步加幅 ≤30%，观察一天再上</span><a href="#" data-goto="view-tuoguan">看档案 →</a></div>
+    </article>
+
+    <article class="case">
+      <div class="c-top"><span class="c-tag clean">删除</span><span class="c-tag boost">追投</span><span class="c-src you">你收藏的</span><time>06/03</time></div>
+      <h3>把量从平庸素材切给冠军素材，整计划回到盈亏线上</h3>
+      <div class="plan">连衣裙引流 #40118 · 素材 7763 → 9017</div>
+      <div class="c-story">
+        <div class="row"><span class="k">背景</span><span>素材 7763 连续 5 天转化衰减，但仍占 60% 展示</span></div>
+        <div class="row"><span class="k">动作</span><span><b>删除 7763</b>，预算切给同人群转化率 3.1% 的 9017</span></div>
+        <div class="row"><span class="k">结果</span><span>该计划当日回到盈亏线上，次日投产比 <span class="pos">3.4</span></span></div>
+      </div>
+      <div class="c-foot"><span class="note">衰减素材别恋战：转化连降 3 天即考虑切量</span><a href="#" data-goto="view-tuoguan">看档案 →</a></div>
+    </article>
+
+    <article class="case">
+      <div class="c-top"><span class="c-tag stop">暂停</span><span class="c-src">我标记的</span><time>05/28</time></div>
+      <h3>大促当天最贵的一次刹车：8 秒拦住异常消耗</h3>
+      <div class="plan">直播间引流-大促场 #39402</div>
+      <div class="c-story">
+        <div class="row"><span class="k">背景</span><span>大促流量高峰，出价竞争激烈，消耗速率突然 3 倍</span></div>
+        <div class="row"><span class="k">动作</span><span>消耗异常出现 <b>8 秒后</b>收紧出价，30 分钟未回稳即暂停</span></div>
+        <div class="row"><span class="k">结果</span><span>异常时段只多花 <span class="neg">¥740</span>，同行平均要烧到小时级才发现</span></div>
+      </div>
+      <div class="c-foot"><span class="note">大促时段把响应阈值调得更敏感是值得的</span><a href="#" data-goto="view-tuoguan">看档案 →</a></div>
+    </article>
+
+    <article class="case">
+      <div class="c-top"><span class="c-tag budget">改预算</span><span class="c-src you">你收藏的</span><time>05/22</time></div>
+      <h3>你把我的放量建议从 ¥3,000 改成 ¥2,500——更稳</h3>
+      <div class="plan">小风扇-直播间 #42588</div>
+      <div class="c-story">
+        <div class="row"><span class="k">背景</span><span>计划达标，我建议日预算加到 ¥3,000</span></div>
+        <div class="row"><span class="k">动作</span><span>你<b>调整后执行</b>：¥2,500，理由是品类季节性临近尾声</span></div>
+        <div class="row"><span class="k">结果</span><span>三天后品类大盘回落，<span class="pos">你的保守是对的</span></span></div>
+      </div>
+      <div class="c-foot"><span class="note">已学习：季节性品类放量上限引入大盘周期因子</span><a href="#" data-goto="view-tuoguan">看档案 →</a></div>
+    </article>
+  </section>
+
+  <div class="pager">
+    <span class="info">第 <b>1–6</b> 个 · 共 <b>24</b> 个案例</span>
+    <span class="sp"></span>
+    <div class="pg-btns" id="pgBtns">
+      <button disabled>‹</button><button class="on">1</button><button>2</button><button>3</button><button>4</button><button>›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  ['segTag','segSrc'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(e){
+      var b = e.target.closest('button'); if(!b) return;
+      this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+      b.classList.add('on');
+    });
+  });
+  document.getElementById('pgBtns').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b || b.disabled || !/^\d+$/.test(b.textContent)) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    var n = +b.textContent, from = (n-1)*6+1, to = Math.min(n*6,24);
+    document.querySelector('.pager .info').innerHTML = '第 <b>' + from + '–' + to + '</b> 个 · 共 <b>24</b> 个案例';
+    this.children[0].disabled = (n===1);
+  });
+  document.querySelectorAll('[data-goto]').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      try{ parent.postMessage({type:'goto', view: el.getAttribute('data-goto')}, '*'); }catch(err){}
+    });
+  });
+})();
+</script>
+</body>
+</html>

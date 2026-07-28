@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能优化 · AI 智能投手</title>
+<style>
+/* 系统字体栈，无远程字体依赖 */
+
+:root{
+  --primary-700:#3562a6;--primary-600:#4578be;--primary-500:#5b91d4;
+  --primary-100:#e4eefb;--primary-50:#f1f6fd;
+  --ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;
+  --hair:#e2e8f0;--hair-2:#f1f5f9;
+  --success:#22a67a;--success-light:#f0fdf6;
+  --danger:#dc5a5a;--danger-light:#fef5f5;
+  --warning:#e09422;--warning-light:#fefcf3;
+  --num:'Manrope';--mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:#fff radial-gradient(840px 240px at 50% -120px,rgba(91,145,212,.13),transparent 70%) no-repeat}
+.page{max-width:1280px;margin:0 auto;padding:96px 40px 56px}
+.num{font-family:var(--num),var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+a{color:var(--primary-600);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+
+.reveal{opacity:0;transform:translateY(12px);animation:rise .7s cubic-bezier(.16,.84,.3,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.d1{animation-delay:.04s}.d2{animation-delay:.14s}.d3{animation-delay:.24s}.d4{animation-delay:.34s}
+
+/* ===== 头部：agent 开口 ===== */
+.lede{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;padding-bottom:28px;border-bottom:1px solid var(--hair);margin-bottom:34px}
+.lede h1{font-size:24px;font-weight:740;letter-spacing:-.02em;line-height:1.4}
+.lede h1 em{font-style:normal;font-family:var(--num);color:var(--primary-600);font-variant-numeric:tabular-nums}
+.lede p{font-size:13px;color:var(--ink-3);margin-top:8px}
+.lede .meta{font-size:12px;color:var(--ink-3);white-space:nowrap;padding-bottom:4px}
+
+/* ===== 分组眉题 ===== */
+.grp{display:flex;align-items:baseline;gap:10px;padding:6px 2px 0}
+.grp b{font-size:12.5px;font-weight:720;color:var(--ink-2)}
+.grp span{font-size:11px;color:var(--ink-3)}
+.grp:not(:first-child){margin-top:10px}
+
+/* ===== 决策卡 ===== */
+.inbox{display:flex;flex-direction:column;gap:18px;max-width:860px}
+.dcard{border:1px solid var(--hair);border-radius:16px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.03),0 10px 30px -18px rgba(30,54,100,.14);overflow:hidden;transition:opacity .5s,transform .5s,max-height .6s .15s,margin .6s .15s}
+.dcard.gone{opacity:0;transform:translateX(36px);max-height:0!important;margin-top:-18px;pointer-events:none}
+.dc-head{display:flex;align-items:center;gap:10px;padding:15px 22px;border-bottom:1px solid var(--hair-2)}
+.sev{flex:0 0 auto;width:8px;height:8px;border-radius:50%}
+.sev.high{background:var(--danger);box-shadow:0 0 0 4px var(--danger-light)}
+.sev.mid{background:var(--warning);box-shadow:0 0 0 4px var(--warning-light)}
+.sev.low{background:var(--primary-500);box-shadow:0 0 0 4px var(--primary-50)}
+.dc-head .what{font-size:14.5px;font-weight:700}
+.dc-head .what .pid{display:block;font-style:normal;font-family:var(--mono);font-size:10px;font-weight:400;color:var(--ink-3);margin-top:4px;letter-spacing:.01em}
+.dc-head .what .belong{font-size:11px;font-weight:500;color:var(--ink-3);margin-left:10px}
+.dc-head .what .belong b{color:var(--ink-2);font-weight:620}
+.dc-head .when{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.dc-body{display:grid;grid-template-columns:minmax(0,1fr) 248px;gap:30px;padding:18px 22px 20px}
+.found .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:9px}
+.found p{font-size:13.5px;line-height:1.75;color:var(--ink-2)}
+.found p b{color:var(--ink);font-weight:680;font-variant-numeric:tabular-nums}
+.found p .neg{color:var(--danger);font-weight:680}
+.found p .pos{color:var(--success);font-weight:680}
+.sugg{border-left:1px solid var(--hair);padding-left:26px;display:flex;flex-direction:column}
+.sugg .k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--primary-600);margin-bottom:9px}
+.sugg .act{font-size:14px;font-weight:700;line-height:1.5}
+.sugg .why{font-size:12px;color:var(--ink-3);line-height:1.6;margin-top:6px}
+.dc-foot{display:flex;align-items:center;gap:10px;padding:0 22px 18px}
+.btn{height:34px;display:inline-flex;align-items:center;gap:7px;padding:0 16px;border-radius:9px;font-size:13px;font-weight:650;cursor:pointer;border:0;font-family:inherit;transition:background .15s,transform .15s,box-shadow .15s}
+.btn.pri{background:linear-gradient(160deg,var(--primary-500),var(--primary-600));color:#fff;box-shadow:0 6px 14px -6px rgba(69,120,190,.7)}
+.btn.pri:hover{transform:translateY(-1px);box-shadow:0 9px 18px -6px rgba(69,120,190,.8)}
+.btn.ghost{background:transparent;color:var(--ink-2);border:1px solid var(--hair)}
+.btn.ghost:hover{border-color:var(--ink-3)}
+.dc-foot .trail{margin-left:auto;font-size:12px}
+.btn.more{margin-left:auto;color:var(--primary-600);border:1px solid var(--primary-100);background:#fff}
+.btn.more:hover{border-color:var(--primary-300,#a3c6ed);background:var(--primary-50)}
+/* 已执行态 */
+.dc-done{display:none;align-items:center;gap:12px;padding:18px 22px}
+.dcard.ok .dc-body,.dcard.ok .dc-foot,.dcard.ok .dc-head{display:none}
+.dcard.ok .dc-done{display:flex}
+.dcard.ok{border-color:rgba(34,166,122,.35);background:linear-gradient(180deg,var(--success-light),#fff)}
+.dc-done .ck{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--success);color:#fff;display:grid;place-items:center;animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:none;opacity:1}}
+.dc-done strong{font-size:13.5px;font-weight:700}
+.dc-done span{display:block;font-size:12px;color:var(--ink-3);margin-top:3px}
+
+/* ===== 空状态 ===== */
+.allclear{display:none;max-width:860px;border:1px dashed var(--hair);border-radius:16px;padding:46px 30px;text-align:center}
+.allclear.on{display:block;animation:rise .6s cubic-bezier(.16,.84,.3,1)}
+.allclear .orb{width:44px;height:44px;border-radius:14px;margin:0 auto 16px;background:linear-gradient(140deg,var(--primary-400,#7dade2),var(--primary-700));color:#fff;font-weight:700;font-size:18px;display:grid;place-items:center}
+.allclear h3{font-size:16px;font-weight:720}
+.allclear p{font-size:13px;color:var(--ink-3);margin-top:8px;line-height:1.7}
+
+/* ===== 已处理 ===== */
+.history{max-width:860px;margin-top:44px}
+.history .hk{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.history .hk h2{font-size:14px;font-weight:720}
+.history .hk span{font-size:12px;color:var(--ink-3)}
+.h-row{display:grid;grid-template-columns:44px 1fr auto auto;gap:14px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--hair-2);font-size:13px}
+.h-row time{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.h-row .t{color:var(--ink-2)}
+.h-row .t b{color:var(--ink);font-weight:650}
+.h-tag{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:5px;white-space:nowrap}
+.h-tag.took{color:var(--success);background:var(--success-light)}
+.h-tag.skip{color:var(--ink-3);background:var(--hair-2)}
+.h-row .r{font-size:12px;color:var(--ink-3)}
+.h-row .r.good{color:var(--success)}
+
+/* ===== 双列布局 + 右栏「今天」 ===== */
+.cols{display:grid;grid-template-columns:minmax(0,860px) 300px;gap:40px;align-items:start}
+.today{position:sticky;top:96px;display:flex;flex-direction:column;gap:14px}
+.td-card{border:1px solid var(--hair);border-radius:14px;background:#fff;padding:16px 18px}
+.td-k{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin-bottom:14px}
+.td-k .live-dot{width:6px;height:6px;border-radius:50%;background:var(--success);animation:tdPulse 2.2s ease-out infinite}
+@keyframes tdPulse{0%{box-shadow:0 0 0 0 rgba(34,166,122,.4)}70%{box-shadow:0 0 0 7px rgba(34,166,122,0)}100%{box-shadow:0 0 0 0 rgba(34,166,122,0)}}
+.td-rows{display:flex;flex-direction:column;gap:2px}
+.td-row{display:flex;align-items:baseline;gap:12px;padding:8px 10px;border-radius:9px}
+.td-row b{font-family:var(--num);font-size:19px;font-weight:760;font-variant-numeric:tabular-nums;min-width:42px;text-align:right}
+.td-row span{font-size:12px;color:var(--ink-2)}
+.td-row span i{font-style:normal;font-size:10.5px;color:var(--ink-3);margin-left:6px}
+.td-row.hot{background:var(--danger-light)}
+.td-row.hot b{color:var(--danger)}
+.td-row.done b{color:var(--success)}
+.td-feed{display:flex;flex-direction:column;max-height:264px;overflow:hidden;position:relative}
+.td-feed:after{content:"";position:absolute;left:0;right:0;bottom:0;height:36px;background:linear-gradient(rgba(255,255,255,0),#fff);pointer-events:none}
+.td-ev{display:grid;grid-template-columns:38px 1fr;gap:9px;padding:8px 0;border-bottom:1px solid var(--hair-2);align-items:baseline}
+.td-ev.fresh{animation:evin .45s cubic-bezier(.16,.84,.3,1)}
+.td-ev time{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.td-ev strong{display:block;font-size:11.5px;font-weight:630;color:var(--ink-2);line-height:1.45}
+.td-ev strong .by-you.adj{color:var(--warning)!important;background:var(--warning-light)!important}
+.td-ev strong .by-you{font-size:9px;font-weight:700;color:var(--primary-600);background:var(--primary-50);border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:1px;white-space:nowrap}
+.td-ev span{display:block;font-size:10.5px;color:var(--ink-3);margin-top:1px}
+.td-more{display:block;margin-top:10px;font-size:11.5px;font-weight:620}
+@media(max-width:1140px){.cols{grid-template-columns:1fr}.today{position:static;flex-direction:row}.td-card{flex:1}}
+@media(max-width:760px){.today{flex-direction:column}}
+
+/* ===== 放权引导卡 ===== */
+.empower{max-width:860px;display:flex;gap:13px;align-items:flex-start;border:1px solid var(--primary-100);background:linear-gradient(180deg,var(--primary-50),#fff 70%);border-radius:15px;padding:17px 20px;margin-bottom:14px}
+.empower .o{flex:0 0 auto;width:28px;height:28px;border-radius:9px;background:linear-gradient(140deg,#7dade2,var(--primary-700));color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;margin-top:2px}
+.emp-tx{flex:1;min-width:0}
+.emp-tx strong{font-size:13.5px;font-weight:720;line-height:1.55}
+.emp-tx p{font-size:12px;color:var(--ink-2);margin-top:5px;line-height:1.65}
+.emp-tx p b{color:var(--primary-700)}
+.emp-act{flex:0 0 auto;display:flex;gap:8px;align-self:center}
+/* ===== 动作分桶 ===== */
+.buckets{max-width:860px;display:flex;flex-direction:column;gap:10px}
+.bk{border:1px solid var(--hair);border-radius:13px;background:#fafbfd}
+.bk-head{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer}
+.bk-head:hover{background:var(--hair-2);border-radius:13px}
+.bk-head strong{font-size:13px;font-weight:700}
+.bk-head strong b{color:var(--primary-600);font-weight:760}
+.bk-sub{font-size:11px;color:var(--ink-3)}
+.bk-head .sp{flex:1}
+.bk .chev{color:var(--ink-3);transition:transform .2s}
+.bk.open .chev{transform:rotate(180deg)}
+.bk-list{display:none;border-top:1px solid var(--hair);padding:4px 16px 10px}
+.bk.open .bk-list{display:block}
+.bk.done{border-color:rgba(34,166,122,.3)}
+.b-row4{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid var(--hair-2);background:#fff;padding-left:12px;padding-right:12px;margin:0 -12px}
+.b-row4:last-of-type{border-bottom:0}
+.b-pn{min-width:0;font-size:12px;font-weight:620;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b-pn i{display:block;font-style:normal;font-family:var(--mono);font-size:9.5px;font-weight:400;color:var(--ink-3);margin-top:2px}
+.b-act{font-size:12px;font-weight:650;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.b-row4 .b-why{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.b-row4.done .b-take{pointer-events:none;color:var(--success);border-color:transparent;background:var(--success-light)}
+.lq-seg{display:flex;gap:2px;padding:10px 0 6px}
+.lq-seg button{height:28px;border:1px solid transparent;background:transparent;border-radius:8px;padding:0 12px;color:var(--ink-2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.lq-seg button:hover{background:var(--hair-2)}
+.lq-seg button.on{background:var(--primary-50);color:var(--primary-700);font-weight:650}
+.bk-pg{display:flex;align-items:center;gap:4px;justify-content:flex-end;padding:9px 0 2px}
+.bk-pg .info{margin-right:auto;font-size:11px;color:var(--ink-3)}
+.bk-pg button{min-width:26px;height:26px;border:1px solid var(--hair);border-radius:7px;background:#fff;font-size:11px;font-weight:620;color:var(--ink-2);cursor:pointer;font-family:var(--num);padding:0 6px}
+.bk-pg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.bk-pg button:disabled{opacity:.4;cursor:default}
+.btn.sm{height:28px;padding:0 12px;font-size:11.5px}
+/* ===== 低优先级聚合 ===== */
+.batch{max-width:860px;border:1px solid var(--hair);border-radius:14px;background:#fafbfd;overflow:hidden}
+.batch-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 20px;cursor:pointer}
+.batch-head:hover{background:var(--hair-2)}
+.batch-head strong{font-size:13.5px;font-weight:700}
+.batch-head strong b{color:var(--primary-600)}
+.batch-head span{display:block;font-size:11.5px;color:var(--ink-3);margin-top:3px}
+.batch-acts{display:flex;align-items:center;gap:12px}
+.btn.sm{height:30px;padding:0 13px;font-size:12px}
+.batch .chev{color:var(--ink-3);transition:transform .2s}
+.batch.open .chev{transform:rotate(180deg)}
+.batch-list{display:none;border-top:1px solid var(--hair)}
+.batch.open .batch-list{display:block}
+.b-row{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:11px 20px;border-bottom:1px solid var(--hair-2);font-size:12.5px;background:#fff}
+.b-row:last-child{border-bottom:0}
+.b-row .b-what{font-weight:600;color:var(--ink-2)}
+.b-row .b-why{font-size:11.5px;color:var(--ink-3)}
+.b-take{height:26px;padding:0 12px;border-radius:7px;border:1px solid var(--hair);background:#fff;font-size:11.5px;font-weight:620;color:var(--primary-600);cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s}
+.b-take:hover{border-color:var(--primary-300);background:var(--primary-50)}
+.b-row.more{grid-template-columns:1fr;color:var(--ink-3);font-size:12px;cursor:pointer;background:#fafbfd}
+.b-row.more:hover{color:var(--primary-600)}
+.b-hidden{display:none}
+.b-hidden.on{display:block}
+.b-row.done .b-take{pointer-events:none;color:var(--success);border-color:transparent;background:var(--success-light)}
+
+@media(max-width:1000px){}
+@media(max-width:900px){
+  .page{padding:84px 20px 40px}
+  .dc-body{grid-template-columns:1fr;gap:18px}
+  .sugg{border-left:0;padding-left:0;border-top:1px solid var(--hair);padding-top:16px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+
+/* ===== 调整弹窗 ===== */
+.adj-overlay{position:fixed;inset:0;background:rgba(15,23,42,.32);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);z-index:1290;opacity:0;pointer-events:none;transition:opacity .25s}
+.adj-overlay.on{opacity:1;pointer-events:auto}
+.adj{position:fixed;top:84px;right:12px;bottom:12px;width:880px;max-width:94vw;display:flex;flex-direction:column;overflow:hidden;background:#fff;border-radius:16px;box-shadow:0 0 0 1px var(--hair),-20px 0 60px -24px rgba(15,23,42,.4);transform:translateX(106%);transition:transform .3s cubic-bezier(.2,.8,.25,1)}
+.adj-overlay.on .adj{transform:none}
+@keyframes adjIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+.adj-head{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--hair)}
+.adj-head h3{font-size:15px;font-weight:740}
+.adj-head h3 span{font-family:var(--mono);font-size:12px;color:var(--ink-3);font-weight:400;margin-left:10px}
+.adj-x{width:30px;height:30px;border:0;background:transparent;border-radius:8px;color:var(--ink-3);cursor:pointer;display:grid;place-items:center}
+.adj-x:hover{background:var(--hair-2);color:var(--ink)}
+/* 上下文数据区 */
+.adj-tabs{display:flex;gap:2px;border:1px solid var(--hair);border-radius:8px;padding:2px;width:max-content;margin-bottom:16px}
+.adj-tabs button{height:26px;border:0;background:transparent;border-radius:6px;padding:0 11px;color:var(--ink-3);font-size:11.5px;font-weight:620;cursor:pointer;font-family:inherit;transition:color .15s,background .15s}
+.adj-tabs button.on{background:var(--ink);color:#fff}
+.adj-nums{display:flex;gap:0;margin-bottom:16px}
+.adj-nums.grid8{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 0}
+.adj-nums .f{flex:1;padding:0 16px;border-left:1px solid var(--hair)}
+.adj-nums.grid8 .f:nth-child(4n+1){padding-left:0;border-left:0}
+.adj-nums .f:first-child{padding-left:0;border-left:0}
+.adj-nums b{display:block;font-family:var(--num);font-size:19px;font-weight:760;font-variant-numeric:tabular-nums}
+.adj-nums b.bad{color:var(--danger)}
+.adj-nums b small{font-size:11px;color:var(--ink-3);font-weight:600}
+.adj-nums span{display:block;font-size:10.5px;color:var(--ink-3);margin-top:4px}
+.adj-chart{position:relative}
+.adj-chart svg{width:100%;height:auto;display:block}
+.adj-chart text{font-family:var(--mono);font-size:9px;fill:var(--ink-3)}
+.adj-last{display:flex;gap:8px;align-items:baseline;margin-top:12px;font-size:12px;color:var(--ink-2)}
+.adj-last time{font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+/* 调值区 */
+.adj-edit{margin-top:18px;padding-top:4px;border-top:1px solid var(--hair-2)}
+.adj-act{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;gap:10px}
+.adj-act .btn{width:100%;justify-content:center}
+.adj-act .arch{font-size:11.5px;text-align:center}
+#adjFields{display:flex;flex-direction:column;gap:14px;margin-top:10px}
+.adj-field{margin-bottom:0}
+.adj-edit .k{font-size:12.5px;font-weight:650;color:var(--ink-2);margin-bottom:12px}
+.adj-edit .k i{font-style:normal;font-weight:500;color:var(--ink-3);font-size:11px;margin-left:8px}
+.adj-row{display:flex;align-items:center;gap:10px}
+.adj-row .cur{font-family:var(--num);font-size:22px;font-weight:740;color:var(--ink-3);text-decoration:line-through;text-decoration-thickness:2px}
+.adj-row .arr{color:var(--ink-3)}
+.adj-input{position:relative}
+.adj-input input{width:92px;height:46px;border:2px solid var(--primary-300);border-radius:11px;font-family:var(--num);font-size:22px;font-weight:740;text-align:right;color:var(--ink);outline:0;font-variant-numeric:tabular-nums;transition:border-color .15s}
+.adj-input input:focus{border-color:var(--primary-600)}
+.adj-input .sug-tag{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:700;color:var(--primary-600);background:#fff;padding:0 7px;white-space:nowrap}
+.adj-steps{display:flex;gap:6px;margin-left:6px}
+.adj-steps button{width:34px;height:34px;border:1px solid var(--hair);border-radius:9px;background:#fff;font-size:16px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:inherit}
+.adj-steps button:hover{border-color:var(--primary-300);color:var(--primary-600)}
+/* agent 实时点评 */
+.adj-say{display:flex;gap:9px;margin-top:16px;padding:12px 14px;border-radius:11px;background:var(--primary-50);border:1px solid var(--primary-100);font-size:12.5px;line-height:1.65;color:var(--ink-2)}
+.adj-say .o{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:linear-gradient(140deg,#7dade2,var(--primary-700));color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.adj-say b{color:var(--ink);font-weight:680}
+.adj-say.warn{background:var(--warning-light);border-color:rgba(224,148,34,.25)}
+.adj-say.danger{background:var(--danger-light);border-color:rgba(220,90,90,.25)}
+.adj-foot{display:flex;align-items:center;gap:10px;padding:16px 24px}
+.adj-foot .trail{margin-left:auto;font-size:12px}
+@media(prefers-reduced-motion:reduce){.adj{animation:none}}
+
+/* ===== 完整数据抽屉:粒度/明细表/执行记录 ===== */
+.adj-main{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:0;padding:18px 24px 20px;flex:1;overflow-y:auto;align-content:start}
+.adj-left{min-width:0;padding-right:24px}
+.adj-right{min-width:0;border-left:1px solid var(--hair-2);padding-left:24px;display:flex;flex-direction:column}
+.adj-gran{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.adj-gran .gk{font-size:12px;font-weight:650;color:var(--ink-2);display:inline-flex;align-items:center;gap:7px}
+.adj-gran select{height:28px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;color:var(--ink);font-family:inherit;padding:0 6px;outline:0;cursor:pointer}
+#adjChart svg{width:100%;height:auto;display:block}
+#adjChart svg text{font-family:var(--mono);font-size:9px;fill:var(--ink-3)}
+.adj-tbl{border:1px solid var(--hair);border-radius:11px;overflow:hidden}
+.adj-tbl .scroll{max-height:252px;overflow-y:auto}
+.adj-tbl table{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed}
+.adj-tbl th:first-child,.adj-tbl td:first-child{width:64px}
+.adj-tbl th{position:sticky;top:0;background:#fafbfd;font-size:10px;color:var(--ink-3);font-weight:650;text-align:left;padding:7px 10px;border-bottom:1px solid var(--hair);white-space:nowrap}
+.adj-tbl th.r,.adj-tbl td.r{text-align:right}
+.adj-tbl td{padding:6.5px 10px;border-bottom:1px solid var(--hair-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.adj-tbl tbody tr:last-child td{border-bottom:0}
+.adj-tbl td.bad{color:var(--danger);font-weight:680}
+.adj-tbl td.wrn{color:var(--warning);font-weight:680}
+.adj-tbl td.ok{color:var(--success);font-weight:650}
+.adj-tbl td.act{color:var(--ink-3);font-size:10.5px;white-space:normal}
+.adj-recs-k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin:16px 0 8px}
+.adj-tl{max-height:300px;overflow-y:auto;padding-right:6px;display:flex;flex-direction:column;flex:0 0 auto}
+.adj-tl .tl-i{display:grid;grid-template-columns:12px 1fr;gap:8px;padding-bottom:13px;position:relative}
+.adj-tl .tl-i:last-child{padding-bottom:0}
+.adj-tl time{display:block;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);line-height:1.4;margin-bottom:1px}
+.adj-tl .tl-rail{position:relative}
+.adj-tl .tl-rail i{position:absolute;left:50%;top:4px;transform:translateX(-50%);width:7px;height:7px;border-radius:50%;background:var(--primary-500)}
+.adj-tl .tl-i.adopt .tl-rail i,.adj-tl .tl-i.adjust .tl-rail i{background:#fff;border:2.5px solid var(--primary-600)}
+.adj-tl .tl-i.plan .tl-rail i{background:#fff;border:2.5px solid var(--warning)}
+.adj-tl .tl-i.reject .tl-rail i{background:var(--ink-3)}
+.adj-tl .tl-rail:after{content:"";position:absolute;left:50%;top:14px;bottom:-4px;transform:translateX(-50%);width:1px;background:var(--hair)}
+.adj-tl .tl-i:last-child .tl-rail:after{display:none}
+.adj-tl .bd strong{font-size:12px;font-weight:660;line-height:1.45;color:var(--ink)}
+.adj-tl .bd strong .who{font-size:8.5px;font-weight:700;border-radius:4px;padding:1px 5px;margin-left:5px;vertical-align:1px;white-space:nowrap}
+.adj-tl .who.ai{color:var(--ink-3);background:var(--hair-2)}
+.adj-tl .who.adopt{color:var(--primary-600);background:var(--primary-50)}
+.adj-tl .who.adjust{color:var(--warning);background:var(--warning-light)}
+.adj-tl .who.reject{color:var(--ink-3);background:var(--hair-2)}
+.adj-tl .who.plan{color:var(--warning);background:var(--warning-light)}
+.adj-tl .bd .why{font-size:10.5px;color:var(--ink-3);margin-top:2px;line-height:1.5}
+.adj-tl .bd .after{display:inline-flex;align-items:baseline;gap:5px;margin-top:5px;font-size:10.5px;border-radius:6px;padding:3px 8px;line-height:1.45}
+.adj-tl .after.good{color:#147a57;background:var(--success-light)}
+.adj-tl .after.bad{color:#b44;background:var(--danger-light)}
+.adj-tl .after.wait{color:var(--ink-2);background:var(--hair-2)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="lede reveal d1">
+    <div>
+      <h1>有 <em id="pendCount">6</em> 件事，等你拍板。</h1>
+      <p>08:00 我扫完了 341 条计划，本批共 <b>43</b> 条建议——按风险×消耗挑出 <b>6</b> 条等你拍板，其余 <b>37</b> 条已按动作归类可批量处理 · 下一批 09:00，本批未处理自动失效。</p>
+    </div>
+    <div class="meta">今天我已自动执行 268 次（L2 托管范围内）· 需要你确认的才会出现在这里</div>
+  </header>
+
+  <div class="cols">
+  <main class="inbox" id="inbox">
+
+    <div class="grp reveal d2"><b>直播间计划</b><span>优先处理 · 流量时效性高</span></div>
+
+    <article class="dcard reveal d2" style="max-height:400px">
+      <div class="dc-head">
+        <span class="sev high"></span>
+        <span class="what">连续 2 天逼近盈亏线<i class="pid">2026-05-24_夏季连衣裙_09:12:33（21/3.4） · ID PLAN-2401（演示）</i></span>
+        <time class="when">08:00 批次</time>
+      </div>
+      <div class="dc-body">
+        <div class="found">
+          <div class="k">我发现</div>
+          <p>近 48 小时实际投产比从 <b>3.0</b> 一路跌到 <span class="neg">2.5</span>，已小幅跌破你的盈亏线 <b>2.6</b>；期间消耗 <b>¥38,400</b>，没有放缓迹象。素材点击率同步下滑 <span class="neg">-22%</span>。</p>
+        </div>
+        <div class="sugg">
+          <div class="k">我建议</div>
+          <div class="act">目标投产比上调至 3.6，同时日预算 ¥3,000 → ¥2,400，进入 24h 观察</div>
+          <div class="why">刚小幅跌破盈亏线、还不到暂停——小幅升高目标投产比收紧出价、减少低效流量，预算同步收一档控敞口。它仍是你消耗第 6 的主力计划，持续走低我会立即暂停并通知你。</div>
+        </div>
+      </div>
+      <div class="dc-foot">
+        <button class="btn pri" data-act="目标投产比 3.4 → 3.6，日预算 ¥3,000 → ¥2,400，已进入 24h 观察">采纳，交给我执行</button>
+        <button class="btn ghost" data-skip>这次先不动</button>
+        <button class="btn ghost more" data-adjust="c1">查看数据 · 调整</button>
+      </div>
+      <div class="dc-done">
+        <span class="ck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><strong>已执行</strong><span class="msg"></span></div>
+      </div>
+    </article>
+
+    <article class="dcard reveal d2" style="max-height:400px">
+      <div class="dc-head">
+        <span class="sev high"></span>
+        <span class="what">已在盈亏线下 4 小时<i class="pid">2026-06-02_夏凉被清仓_20:45:11（8/2.6） · ID PLAN-2402（演示）</i></span>
+        <time class="when">08:00 批次</time>
+      </div>
+      <div class="dc-body">
+        <div class="found">
+          <div class="k">我发现</div>
+          <p>实际投产比 <span class="neg">2.1</span>，低于盈亏线 <b>2.6</b> 已持续 <b>4 小时</b>；今天消耗 <b>¥9,800</b>、成交 <b>¥20,600</b>，点击率同步走低，没有回升迹象。</p>
+        </div>
+        <div class="sugg">
+          <div class="k">我建议</div>
+          <div class="act">暂停该计划</div>
+          <div class="why">它在你的 L1 确认名单里，我不能直接停。再跑一小时大约再亏 ¥2,400——建议尽快拍板。</div>
+        </div>
+      </div>
+      <div class="dc-foot">
+        <button class="btn pri" data-act="直播间计划 42561 已暂停，止住继续消耗">采纳，立即暂停</button>
+        <button class="btn ghost" data-skip>这次先不动</button>
+        <button class="btn ghost more" data-adjust="c2">查看完整数据</button>
+      </div>
+      <div class="dc-done">
+        <span class="ck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><strong>已执行</strong><span class="msg"></span></div>
+      </div>
+    </article>
+
+    <article class="dcard reveal d3" style="max-height:400px">
+      <div class="dc-head">
+        <span class="sev mid"></span>
+        <span class="what">素材转化持续衰减<i class="pid">素材 ID MAT-108（演示） · 挂在 2026-05-30_连衣裙引流_14:02:51 等 3 条计划</i></span>
+        <time class="when">08:00 批次</time>
+      </div>
+      <div class="dc-body">
+        <div class="found">
+          <div class="k">我发现</div>
+          <p>该素材连续 <b>5 天</b>转化率下滑，今日 <span class="neg">0.8%</span>（峰值 2.4%）；它挂在 <b>计划 40118 / 40552 / 41037</b> 三条在投计划上，今天已花 <b>¥6,150</b>，成交只有 <b>¥7,300</b>，按你的盈亏线算已经在亏。</p>
+        </div>
+        <div class="sugg">
+          <div class="k">我建议</div>
+          <div class="act">删除该素材，预算让给同计划表现最好的素材 9017</div>
+          <div class="why">9017 同计划同人群，近 7 天转化率 3.1% 且稳定——替换后这部分消耗大概率回到盈亏线之上。</div>
+        </div>
+      </div>
+      <div class="dc-foot">
+        <button class="btn pri" data-act="素材 8842 已删除，预算已切给素材 9017">采纳，删除素材</button>
+        <button class="btn ghost" data-skip>这次先不动</button>
+        <button class="btn ghost more" data-adjust="c3">查看完整数据</button>
+      </div>
+      <div class="dc-done">
+        <span class="ck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><strong>已执行</strong><span class="msg"></span></div>
+      </div>
+    </article>
+
+    <div class="grp reveal d4"><b>商品计划</b><span>次优先 · 节奏相对平稳</span></div>
+
+    <article class="dcard reveal d4" style="max-height:400px">
+      <div class="dc-head">
+        <span class="sev low"></span>
+        <span class="what">连续 3 天稳定达标，可以放量<i class="pid">2026-05-16_凉感四件套_10:08:27（35/2.8） · ID PLAN-2403（演示）</i></span>
+        <time class="when">08:00 批次</time>
+      </div>
+      <div class="dc-body">
+        <div class="found">
+          <div class="k">我发现</div>
+          <p>连续 <b>3 天</b>实际投产比稳定在 <span class="pos">4.2~4.6</span>（盈亏线 2.8），日预算 <b>¥2,000</b> 每天 <b>15:00 前就花完</b>——量被预算卡住了，后半天的转化白白流失。</p>
+        </div>
+        <div class="sugg">
+          <div class="k">我建议</div>
+          <div class="act">日预算 ¥2,000 → ¥3,200，分两天逐步上</div>
+          <div class="why">一次加太猛会扰动模型，先加到 ¥2,600 观察一天、稳了再到 ¥3,200。投产比跌破 3.5 我就停止加量。</div>
+        </div>
+      </div>
+      <div class="dc-foot">
+        <button class="btn pri" data-act="商品计划 43890 日预算 ¥2,000 → ¥2,600，明天视情况加到 ¥3,200">采纳，交给我执行</button>
+        <button class="btn ghost" data-skip>这次先不动</button>
+        <button class="btn ghost more" data-adjust="c4">查看数据 · 调整</button>
+      </div>
+      <div class="dc-done">
+        <span class="ck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><strong>已执行</strong><span class="msg"></span></div>
+      </div>
+    </article>
+
+    <article class="dcard reveal d4" style="max-height:400px">
+      <div class="dc-head">
+        <span class="sev mid"></span>
+        <span class="what">素材表现突出，建议追投<i class="pid">素材 ID MAT-109（演示） · 挂在 2026-06-01_防晒衣男款_16:33:09</i></span>
+        <time class="when">08:00 批次</time>
+      </div>
+      <div class="dc-body">
+        <div class="found">
+          <div class="k">我发现</div>
+          <p>素材 9412 近 3 天点击率 <span class="pos">5.8%</span>、转化率 <span class="pos">3.4%</span>，都是该计划素材组里最高；但它现在只分到 <b>22%</b> 的展示，大量预算流向两条表现平平的旧素材。</p>
+        </div>
+        <div class="sugg">
+          <div class="k">我建议</div>
+          <div class="act">追投素材 9412，同计划下调两条低效素材的权重</div>
+          <div class="why">把量往证明过自己的素材上倾斜，是这条计划当前性价比最高的优化——不动预算总盘，风险很小。</div>
+        </div>
+      </div>
+      <div class="dc-foot">
+        <button class="btn pri" data-act="素材 9412 已追投 ¥600 · 持续约 6 小时，两条低效素材权重已下调">采纳，交给我执行</button>
+        <button class="btn ghost" data-skip>这次先不动</button>
+        <button class="btn ghost more" data-adjust="c5">查看数据 · 调整</button>
+      </div>
+      <div class="dc-done">
+        <span class="ck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><strong>已执行</strong><span class="msg"></span></div>
+      </div>
+    </article>
+
+    <div class="grp reveal d4"><b>托管范围</b><span>不属于本批扫描 · 持续提醒</span></div>
+
+    <article class="dcard reveal d4" style="max-height:400px">
+      <div class="dc-head">
+        <span class="sev low"></span>
+        <span class="what">7 条高消耗计划 · 还没交给我</span>
+        <time class="when">持续提醒</time>
+      </div>
+      <div class="dc-body">
+        <div class="found">
+          <div class="k">我发现</div>
+          <p>这 7 条计划占了你 <b>18%</b> 的消耗（日均 <b>¥13,700</b>），但不在我的托管范围——昨晚 23:00 后它们出现过 <span class="neg">2 次</span>投产比异常波动，没有人处理。</p>
+        </div>
+        <div class="sugg">
+          <div class="k">我建议</div>
+          <div class="act">把这 7 条交给我托管</div>
+          <div class="why">交给我之后，夜间跌破盈亏线我会第一时间处理，和你已托管的 341 条一样。</div>
+        </div>
+      </div>
+      <div class="dc-foot">
+        <button class="btn pri" data-act="7 条计划已加入托管，今晚开始我替你盯">好，都交给你</button>
+        <button class="btn ghost" data-skip>先看看是哪些</button>
+        <span class="trail"><a href="#" data-goto="view-tuoguan">查看这 7 条计划 →</a></span>
+      </div>
+      <div class="dc-done">
+        <span class="ck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <div><strong>已执行</strong><span class="msg"></span></div>
+      </div>
+    </article>
+
+    <div class="allclear" id="allclear">
+      <div class="orb">投</div>
+      <h3>本批要紧的已清零</h3>
+      <p>我继续盯着 341 条计划。有超出我权限的情况，我会第一时间放到这里并通知你。</p>
+    </div>
+
+    <!-- 爆量三层防洪:放权引导 + 动作分桶 -->
+    <section class="empower reveal d4" id="empower">
+      <span class="o">投</span>
+      <div class="emp-tx">
+        <strong>这批 37 条低优先级里 32 条是常规调价 / 预算微调——建议把这两类交给我</strong>
+        <p>你最近 30 天对「调投产比 / 改预算」类建议的采纳率 <b>96%</b>(231/241)。授权 L2 后这类我直接执行、记日志、可撤回，只把真正要紧的拿来烦你。</p>
+      </div>
+      <div class="emp-act">
+        <button class="btn pri" data-goto="view-sheding">去授权</button>
+        <button class="btn ghost" id="empSkip">先不用</button>
+      </div>
+    </section>
+
+    <section class="buckets reveal d4">
+      <div class="bk open" id="lowq">
+        <div class="bk-head" style="cursor:default">
+          <strong>低优先级建议 <b class="num" id="lqN">37</b> 条</strong>
+          <span class="bk-sub">单条影响小 · 可按类批量</span>
+          <span class="sp"></span>
+          <button class="btn pri sm" id="lqAll">采纳全部 37 条</button>
+        </div>
+        <div class="bk-list">
+          <div class="seg lq-seg" id="lqSeg">
+            <button class="on" data-t="all">全部</button>
+            <button data-t="roi">调投产比</button>
+            <button data-t="bud">改预算</button>
+            <button data-t="mat">素材</button>
+          </div>
+          <div class="bk-rows" id="lqRows"></div>
+          <div class="bk-pg" id="lqPg"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="today">
+    <div class="td-card">
+      <div class="td-k">今日概览</div>
+      <div class="td-rows">
+        <div class="td-row"><b class="num">268</b><span>我自动执行<i>L2 托管范围</i></span></div>
+        <div class="td-row hot"><b class="num" id="tdPend">6</b><span>等你拍板<i>L1 需确认</i></span></div>
+        <div class="td-row"><b class="num" id="tdBatch">37</b><span>低优先级建议<i>可按类批量</i></span></div>
+        <div class="td-row done"><b class="num" id="tdDone">0</b><span>你已处理 ✓</span></div>
+      </div>
+    </div>
+    <div class="td-card">
+      <div class="td-k"><span class="live-dot"></span>刚刚发生</div>
+      <div class="td-feed" id="tdFeed"></div>
+      <a class="td-more" href="#" data-goto="view-zhixing">完整账本 · 执行日志 →</a>
+    </div>
+  </aside>
+  </div><!--/cols-->
+
+</div>
+
+<div class="adj-overlay" id="adjOverlay">
+  <div class="adj" role="dialog" aria-modal="true" aria-label="调整后执行">
+    <div class="adj-head">
+      <h3>完整数据<span id="adjTitle"></span></h3>
+      <button class="adj-x" id="adjClose" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+
+    <div class="adj-main">
+      <div class="adj-left">
+        <div class="adj-gran">
+          <span class="gk">时间粒度</span>
+          <div class="adj-tabs" id="adjGran" style="margin-bottom:0"><button class="on" data-g="day">按天</button><button data-g="hour">按小时</button></div>
+          <span class="gk" id="adjDateWrap" style="display:none">选择日期 <select id="adjDate"></select></span>
+        </div>
+        <div class="adj-chart" id="adjChart"></div>
+        <div class="adj-tbl" id="adjTable"></div>
+      </div>
+      <div class="adj-right">
+        <div class="adj-recs-k" style="margin-top:0">档案 · 接管以来</div>
+        <div class="adj-tl" id="adjRecs"></div>
+        <div class="adj-edit">
+          <div class="adj-recs-k">调整后执行</div>
+          <div id="adjFields"></div>
+        </div>
+        <div class="adj-act">
+          <button class="btn pri" id="adjGo">交给我执行</button>
+          <a class="arch" href="#" data-goto="view-tuoguan">在计划明细查看完整档案 →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var cards = Array.prototype.slice.call(document.querySelectorAll('.dcard'));
+  var count = document.getElementById('pendCount');
+  var pending = cards.length;
+
+  function sync(){
+    count.textContent = pending;
+    var tp = document.getElementById('tdPend'), td = document.getElementById('tdDone');
+    if(tp) tp.textContent = pending;
+    if(td) td.textContent = cards.length - pending;
+    try{ parent.postMessage({type:'zhenduan-badge', count: pending}, '*'); }catch(e){}
+    if(pending === 0){
+      document.getElementById('allclear').classList.add('on');
+      var lqRemain = (typeof LQ !== 'undefined') ? LQ.filter(function(r){ return !r.done; }).length : 0;
+      document.querySelector('.lede h1').innerHTML = '要紧的都处理完了。';
+      document.querySelector('.lede p').textContent = lqRemain > 0
+        ? '高风险的清零了——下面还有 ' + lqRemain + ' 条低优先级，可按类批量采纳，不处理则本批失效、我按默认策略继续盯。'
+        : '本批全部处理完——剩下的交给我，下一批 09:00 整点出。';
+      var hot = tp && tp.closest('.td-row');
+      if(hot){ hot.classList.remove('hot'); hot.classList.add('done'); hot.querySelector('span').innerHTML = '等你拍板<i>已清零 ✓</i>'; }
+    }
+  }
+  sync();
+
+  function dismiss(card){
+    pending--;
+    sync();
+    setTimeout(function(){ card.classList.add('gone'); }, 1400);
+  }
+
+  cards.forEach(function(card){
+    var take = card.querySelector('[data-act]');
+    var skip = card.querySelector('[data-skip]');
+    take.addEventListener('click', function(){
+      card.querySelector('.dc-done .msg').textContent = take.getAttribute('data-act');
+      card.classList.add('ok');
+      dismiss(card);
+      if(pushFeed) pushFeed(card.querySelector('.what').childNodes[0].textContent.trim(), take.getAttribute('data-act'));
+    });
+    skip.addEventListener('click', function(){
+      card.querySelector('.dc-done .ck').style.background = '#94a3b8';
+      card.querySelector('.dc-done strong').textContent = '好，这次不动';
+      card.querySelector('.dc-done .msg').textContent = '我会继续观察它，有变化再来找你';
+      card.classList.add('ok');
+      dismiss(card);
+    });
+  });
+
+  /* ===== 调整弹窗（数据驱动：按建议内容渲染可调字段） ===== */
+  var adjOv = document.getElementById('adjOverlay');
+  var adjGo = document.getElementById('adjGo');
+  var fieldsEl = document.getElementById('adjFields');
+  var curCfg = null, curCard = null;
+
+  /* 每张可调卡的配置：标题/参考数据/走势图/上次动作/字段/点评规则/完成文案 */
+  var ADJ = {
+    c2:{
+      title:'2026-06-02_夏凉被清仓_20:45:11（8/2.6） · ID PLAN-2402（演示）', line:'2.6',
+      roiSeries:[3.1,2.9,2.8,2.7,2.5,2.3,2.1], baseCost:6700, baseCvr:1.4,
+      dayActs:{4:'我:调投产比 3.2→3.0',5:'我:调投产比 3.0→2.8'},
+      hourActs:{4:'我:收紧出价',6:'本批:建议暂停'},
+      recs:[
+        {t:'本批 08:00', who:'plan', s:'建议暂停该计划', w:'已连续 4 小时低于盈亏线，再跑一小时约再亏 ¥2,400'},
+        {t:'06/08 16:40', who:'ai', s:'调投产比 3.0 → 2.8', w:'二次收紧', a:'bad', atx:'未能止住下滑'},
+        {t:'06/07 10:05', who:'ai', s:'调投产比 3.2 → 3.0', w:'预警收紧', a:'wait', atx:'短暂回稳后继续走低'}
+      ],
+      fields:[], actLabel:'采纳，立即暂停'
+    },
+    c3:{
+      title:'素材 ID MAT-108（演示） · 挂在 2026-05-30_连衣裙引流_14:02:51 等 3 条计划', line:'2.6',
+      roiSeries:[2.9,2.6,2.3,2.0,1.7,1.4,1.2], baseCost:2050, baseCvr:0.9,
+      dayActs:{2:'我:降低素材权重'},
+      hourActs:{},
+      recs:[
+        {t:'本批 08:00', who:'plan', s:'建议删除，预算切给素材 9017', w:'9017 同人群转化率 3.1% 且稳定'},
+        {t:'06/07 14:00', who:'ai', s:'下调素材权重', w:'转化连降 3 天，先降权观察', a:'bad', atx:'降权后仍未止跌'},
+        {t:'近 5 天', who:'ai', s:'持续盯防', w:'转化率从峰值 2.4% 降至 0.8%'}
+      ],
+      fields:[], actLabel:'采纳，删除素材'
+    },
+    c1:{
+      title:'2026-05-24_夏季连衣裙_09:12:33（21/3.4） · ID PLAN-2401（演示）', roiSeries:[3.6,3.4,3.1,3.3,3.0,2.8,2.5], baseCost:18200, baseCvr:2.1,
+      dayActs:{1:'我:调投产比 3.0→3.2',4:'我:调投产比 3.2→3.4',2:'你:维持投放'},
+      hourActs:{3:'我:收紧出价',8:'本批:建议调整'},
+      recs:[
+        {t:'本批 08:00', who:'plan', s:'建议 投产比→3.6 · 预算→¥2,400', w:'刚跌破盈亏线，升目标小幅收紧观察'},
+        {t:'06/07 14:20', who:'ai', s:'调投产比 3.2 → 3.4', w:'点击率回落，升目标预防性收紧', a:'good', atx:'此后稳了 2 天'},
+        {t:'06/05 20:15', who:'reject', s:'未采纳：维持投放', w:'我建议收紧，你判断大场开播前不动', a:'good', atx:'当晚投产比 4.1，你的判断对'},
+        {t:'06/04 09:30', who:'ai', s:'调投产比 3.0 → 3.2', w:'点击率下滑，升目标预防性收紧'}
+      ], line:'2.6',
+      fields:[
+        {id:'roi', label:'目标投产比', cur:'3.4', sug:3.6, sugTx:'我的建议 3.6', step:.1, min:2, max:6, dec:1},
+        {id:'bud', label:'日预算', cur:'¥3,000', sug:2400, sugTx:'我的建议 ¥2,400', step:100, min:500, max:20000, dec:0, money:1}
+      ],
+      review:function(v){
+        var parts=[], lv=0, roi=v.roi, b=v.bud;
+        if(roi<2.6){lv=2;parts.push('<b>投产比 '+roi.toFixed(1)+' 低于你的盈亏线 2.6</b>——那是放量方向，会加速跌破');}
+        else if(roi<3.4){lv=2;parts.push('<b>投产比 '+roi.toFixed(1)+' 比当前 3.4 还低</b>——刚跌破盈亏线还往放量调，方向反了');}
+        else if(roi<3.6){lv=Math.max(lv,1);parts.push('投产比 '+roi.toFixed(1)+' 收得偏轻，跌破盈亏线的风险还在');}
+        else if(roi<=4.0){parts.push('投产比 '+roi.toFixed(1)+(roi===3.6?'（我的建议）':'')+' 小幅收紧到位，减少低效流量、稳住回收');}
+        else {lv=1;parts.push('投产比 '+roi.toFixed(1)+' 收得过狠，消耗可能骤降、主力计划丢量太多');}
+        if(b<1500){lv=Math.max(lv,1);parts.push('预算砍到 ¥'+b.toLocaleString()+' 过狠，回稳后要重过冷启动');}
+        else if(b<2800){parts.push('预算 ¥'+b.toLocaleString()+(b===2400?'（我的建议）':'')+' 把风险敞口收住了');}
+        else if(b<=3000){lv=Math.max(lv,1);parts.push('预算几乎没收——亏损敞口还是 ¥'+b.toLocaleString()+'/天');}
+        else {lv=2;parts.push('<b>预算还加到 ¥'+b.toLocaleString()+'</b>？先稳住再谈放量');}
+        return {level:lv, text:parts.join('；')+'。执行后我盯 24h，跌破盈亏线立即暂停。'};
+      },
+      go:function(v){return {btn:'按 投产比 '+v.roi.toFixed(1)+' · 预算 ¥'+v.bud.toLocaleString()+' 执行',
+        same:(v.roi===3.6 && v.bud===2400), adopt:(Math.abs(v.roi-3.6)<=0.15 && Math.abs(v.bud-2400)<=180),
+        note:'投产比 3.4 → '+v.roi.toFixed(1)+'，预算 ¥3,000 → ¥'+v.bud.toLocaleString()+'（我建议 3.6 / ¥2,400）· 已进入 24h 观察',
+        sameNote:'目标投产比 3.4 → 3.6，日预算 ¥3,000 → ¥2,400，已进入 24h 观察',
+        feed:['计划 41203 调投产比 + 预算','投产比 → '+v.roi.toFixed(1)+' · 预算 → ¥'+v.bud.toLocaleString()]};}
+    },
+    c4:{
+      title:'2026-05-16_凉感四件套_10:08:27（35/2.8） · ID PLAN-2403（演示）', roiSeries:[3.6,3.9,4.1,4.2,4.4,4.3,4.5], baseCost:1900, baseCvr:3.3,
+      dayActs:{2:'我:预算 1600→2000',5:'我:删除素材 8101'},
+      hourActs:{15:'预算 15:00 花完'},
+      recs:[
+        {t:'本批 08:00', who:'plan', s:'建议 预算 ¥2,000 → ¥2,600', w:'连续 3 天达标且预算 15:00 前花完'},
+        {t:'06/06 11:20', who:'ai', s:'删除素材 8101', w:'低效素材占着展示', a:'good', atx:'预算流向高效素材，投产比 +0.2'},
+        {t:'06/05 10:00', who:'ai', s:'预算 ¥1,600 → ¥2,000', a:'good', atx:'投产比没掉、消耗当天花满'}
+      ], line:'2.8',
+      fields:[
+        {id:'bud', label:'日预算', cur:'¥2,000', sug:2600, sugTx:'我的建议 ¥2,600（先到这档）', step:100, min:1000, max:10000, dec:0, money:1}
+      ],
+      review:function(v){
+        var b=v.bud, parts=[], lv=0;
+        if(b<=2000){lv=1;parts.push('¥'+b.toLocaleString()+' 等于没放量——它每天 15:00 就花完，量还是被卡住');}
+        else if(b<=2800){parts.push('¥'+b.toLocaleString()+(b===2600?'（我的建议）':'')+' 是稳妥的一档，明天稳了再上 ¥3,200');}
+        else if(b<=3400){lv=1;parts.push('¥'+b.toLocaleString()+' 一步到位有点猛——加幅超 60% 可能扰动模型，我建议分两天走');}
+        else {lv=2;parts.push('<b>¥'+b.toLocaleString()+' 加得太猛</b>——冷启动模型重新探索，投产比短期大概率掉穿 3.5');}
+        return {level:lv, text:parts.join('；')+'。放量期间投产比跌破 3.5 我立即停止加量并通知你。'};
+      },
+      go:function(v){return {btn:'按 预算 ¥'+v.bud.toLocaleString()+' 执行',
+        same:(v.bud===2600), adopt:(Math.abs(v.bud-2600)<=180),
+        note:'预算 ¥2,000 → ¥'+v.bud.toLocaleString()+'（我建议 ¥2,600）· 放量观察中',
+        sameNote:'日预算 ¥2,000 → ¥2,600，明天视情况加到 ¥3,200',
+        feed:['商品计划 43890 放量','预算 → ¥'+v.bud.toLocaleString()]};}
+    },
+    c5:{
+      title:'素材 ID MAT-109（演示） · 挂在 2026-06-01_防晒衣男款_16:33:09', roiSeries:[3.1,3.3,3.4,3.6,3.7,3.8,3.9], baseCost:970, baseCvr:3.4,
+      dayActs:{},
+      hourActs:{},
+      recs:[
+        {t:'本批 08:00', who:'plan', s:'建议追投素材 9412 ¥600 · 约 6 小时', w:'点击率 5.8%/转化 3.4% 全组第一，只分到 22% 展示'},
+        {t:'近 3 天', who:'ai', s:'持续盯防', w:'素材 9412 转化稳定向好'}
+      ], line:'2.8',
+      fields:[
+        {id:'amt', label:'追投金额', cur:'¥0', sug:600, sugTx:'我的建议 ¥600 · 持续约 6 小时（按消耗节奏定）', step:100, min:100, max:3000, dec:0, money:1}
+      ],
+      review:function(v){
+        var a=v.amt, parts=[], lv=0;
+        if(a<300){lv=1;parts.push('¥'+a.toLocaleString()+' 太少——分到的展示起不来，测不出这条素材的真实上限');}
+        else if(a<=900){parts.push('¥'+a.toLocaleString()+(a===600?'（我的建议）':'')+' 够它把量跑起来，同时风险可控');}
+        else if(a<=1500){lv=1;parts.push('¥'+a.toLocaleString()+' 偏高——素材好不等于无限放，先 ¥600 验证它接得住再加');}
+        else {lv=2;parts.push('<b>¥'+a.toLocaleString()+' 一次给太多</b>——单素材消耗占比过高，素材一衰减整个计划跟着抖');}
+        return {level:lv, text:parts.join('；')+'。本次追投持续约 6 小时（按它的消耗节奏定），之后 48h 我盯转化承接，掉穿 2.5% 就回收量。'};
+      },
+      go:function(v){return {btn:'按 追投 ¥'+v.amt.toLocaleString()+' · 约6h 执行',
+        same:(v.amt===600), adopt:(Math.abs(v.amt-600)<=180),
+        note:'素材 9412 追投 ¥'+v.amt.toLocaleString()+' · 持续约 6 小时（我建议 ¥600）· 低效素材权重已下调',
+        sameNote:'素材 9412 已追投 ¥600 · 持续约 6 小时，两条低效素材权重已下调',
+        feed:['素材 9412 追投','¥'+v.amt.toLocaleString()+' · 约6h · 低效素材降权']};}
+    }
+  };
+
+  /* ===== 完整数据渲染:按天 7 行 / 按小时 24 行 ===== */
+  function genDaily(cfg){
+    var rows = [], dates = ['06/03','06/04','06/05','06/06','06/07','06/08','06/09'];
+    for(var i=0;i<7;i++){
+      var roi = cfg.roiSeries[i];
+      var cost = Math.round(cfg.baseCost * (0.85 + 0.3*Math.sin(i*1.7)) );
+      rows.push({ t:dates[i], roi:roi, cost:cost, gmv:Math.round(cost*roi), clk:Math.round(cost/3.2), cvr:(cfg.baseCvr + 0.4*Math.sin(i)).toFixed(1)+'%', act:cfg.dayActs[i]||'—' });
+    }
+    return rows;
+  }
+  function genHourly(cfg){
+    var rows = [];
+    for(var h=0;h<24;h++){
+      var wave = 0.55 + 0.45*Math.sin((h-3)/24*2*Math.PI);
+      var roi = +(cfg.roiSeries[6] * (0.85 + 0.3*Math.sin(h*1.3))).toFixed(1);
+      var cost = Math.round(cfg.baseCost/24 * wave * 2);
+      rows.push({ t:('0'+h).slice(-2)+':00', roi:roi, cost:cost, gmv:Math.round(cost*roi), clk:Math.round(cost/3.2), cvr:(cfg.baseCvr + 0.5*Math.sin(h/3)).toFixed(1)+'%', act:cfg.hourActs[h]||'—' });
+    }
+    return rows;
+  }
+  function roiCls(roi, line){ return roi < line ? 'bad' : (roi < line*1.15 ? 'wrn' : 'ok'); }
+  function renderChart(rows, line){
+    var W=520,H=156,padL=32,padR=10,padT=16,padB=24;
+    var lo=Math.min.apply(null,rows.map(function(r){return r.roi;}).concat([line]))-0.4;
+    var hi=Math.max.apply(null,rows.map(function(r){return r.roi;}))+0.4;
+    var maxC=Math.max.apply(null,rows.map(function(r){return r.cost;}));
+    function x(i){ return padL+(W-padL-padR)*(i+0.5)/rows.length; }
+    function y(v){ return padT+(H-padT-padB)*(1-(v-lo)/(hi-lo)); }
+    var bw=Math.max(3,(W-padL-padR)/rows.length*0.52);
+    var svg='<svg viewBox="0 0 '+W+' '+H+'">';
+    /* 消耗柱(占下方 55% 高度区) */
+    rows.forEach(function(r,i){
+      var bh=(H-padT-padB)*0.55*r.cost/maxC;
+      svg+='<rect x="'+(x(i)-bw/2).toFixed(1)+'" y="'+(H-padB-bh).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2" fill="#e4eefb"/>';
+    });
+    /* 盈亏线 */
+    var lineY=y(line).toFixed(1);
+    svg+='<line x1="'+padL+'" y1="'+lineY+'" x2="'+(W-padR)+'" y2="'+lineY+'" stroke="#fca5a5" stroke-width="1" stroke-dasharray="4 3"/>'
+       +'<text x="'+padL+'" y="'+(lineY-4)+'" fill="#dc5a5a">盈亏线 '+line+'</text>';
+    /* 投产比线 */
+    var pts=rows.map(function(r,i){return x(i).toFixed(1)+','+y(r.roi).toFixed(1);}).join(' ');
+    svg+='<polyline fill="none" stroke="#4578be" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="'+pts+'"/>';
+    var step=Math.ceil(rows.length/8);
+    rows.forEach(function(r,i){ if(i%step===0||i===rows.length-1) svg+='<text x="'+x(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">'+r.t+'</text>'; });
+    var last=rows[rows.length-1];
+    svg+='<circle cx="'+x(rows.length-1).toFixed(1)+'" cy="'+y(last.roi).toFixed(1)+'" r="3.5" fill="#fff" stroke="'+(last.roi<line?'#dc5a5a':'#4578be')+'" stroke-width="2"/>';
+    /* 图例 */
+    svg+='<rect x="'+(W-150)+'" y="4" width="9" height="9" rx="2" fill="#e4eefb"/><text x="'+(W-137)+'" y="12">消耗</text>'
+       +'<line x1="'+(W-92)+'" y1="8" x2="'+(W-76)+'" y2="8" stroke="#4578be" stroke-width="2"/><text x="'+(W-70)+'" y="12">投产比</text>';
+    svg+='</svg>';
+    document.getElementById('adjChart').innerHTML=svg;
+  }
+  function renderTable(rows, line){
+    var html='<div class="scroll"><table><thead><tr><th>时段</th><th class="r">支付投产比</th><th class="r">成交金额</th><th class="r">消耗</th><th class="r">点击量</th><th class="r">转化率</th></tr></thead><tbody>';
+    rows.forEach(function(r){
+      html+='<tr><td><b>'+r.t+'</b></td><td class="r '+roiCls(r.roi,line)+'">'+r.roi.toFixed(1)+'</td><td class="r">¥'+r.gmv.toLocaleString()+'</td><td class="r">¥'+r.cost.toLocaleString()+'</td><td class="r">'+r.clk.toLocaleString()+'</td><td class="r">'+r.cvr+'</td></tr>';
+    });
+    html+='</tbody></table></div>';
+    document.getElementById('adjTable').innerHTML=html;
+  }
+  function renderRecs(cfg){
+    document.getElementById('adjRecs').innerHTML=cfg.recs.map(function(i){
+      return '<div class="tl-i '+(i.who||'')+'">'+
+        '<span class="tl-rail"><i></i></span>'+
+        '<div class="bd"><time>'+i.t+'</time><strong>'+i.s+'<span class="who '+(i.who||'ai')+'">'+({ai:'我自动',adopt:'采纳',adjust:'调整后采纳',reject:'未采纳',plan:'本批建议'}[i.who]||'我自动')+'</span></strong>'+
+        (i.w?'<div class="why">'+i.w+'</div>':'')+
+        (i.a?'<div class="after '+i.a+'">'+(i.a==='good'?'✓':(i.a==='bad'?'✗':'◷'))+' '+i.atx+'</div>':'')+
+        '</div></div>';
+    }).join('');
+  }
+  var curGran='day';
+  function renderAll(){
+    if(!curCfg) return;
+    var rows = curGran==='day' ? genDaily(curCfg) : genHourly(curCfg);
+    renderChart(rows, parseFloat(curCfg.line));
+    renderTable(rows, parseFloat(curCfg.line));
+    renderRecs(curCfg);
+  }
+  document.getElementById('adjGran').addEventListener('click', function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    this.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    curGran=b.getAttribute('data-g');
+    var dw=document.getElementById('adjDateWrap');
+    dw.style.display = curGran==='hour' ? '' : 'none';
+    if(curGran==='hour'){
+      var sel=document.getElementById('adjDate');
+      if(!sel.options.length){ ['06/09 今天','06/08','06/07','06/06','06/05','06/04','06/03'].forEach(function(d){ var o=document.createElement('option'); o.textContent=d; sel.appendChild(o); }); }
+    }
+    renderAll();
+  });
+  document.getElementById('adjDate') && document.getElementById('adjDate').addEventListener('change', renderAll);
+
+  function vals(){
+    var out = {};
+    fieldsEl.querySelectorAll('input').forEach(function(inp){
+      var f = inp._field;
+      out[f.id] = f.dec ? parseFloat(inp.value) : parseInt(inp.value, 10);
+    });
+    return out;
+  }
+  function review(){
+    if(!curCfg || !curCfg.fields.length) return;
+    var v = vals();
+    adjGo.disabled = Object.keys(v).some(function(k){ return isNaN(v[k]); });
+  }
+  function buildFields(){
+    fieldsEl.innerHTML = '';
+    curCfg.fields.forEach(function(f){
+      var d = document.createElement('div');
+      d.className = 'adj-field';
+      d.innerHTML = '<div class="k">' + f.label + ' <i>当前 ' + f.cur + '</i></div>' +
+        '<div class="adj-row"><span class="cur num">' + f.cur.replace('¥','') + '</span>' +
+        '<svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>' +
+        '<div class="adj-input"><span class="sug-tag">' + f.sugTx + '</span>' +
+        '<input type="number" step="' + f.step + '" min="' + f.min + '" max="' + f.max + '" value="' + f.sug + '"></div>' +
+        '<div class="adj-steps"><button data-d="-1" aria-label="减">−</button><button data-d="1" aria-label="加">＋</button></div></div>';
+      var inp = d.querySelector('input');
+      inp._field = f;
+      inp.addEventListener('input', review);
+      d.querySelectorAll('.adj-steps button').forEach(function(b){
+        b.addEventListener('click', function(){
+          var cur = f.dec ? parseFloat(inp.value || f.sug) : parseInt(inp.value || f.sug, 10);
+          var next = cur + f.step * parseInt(b.getAttribute('data-d'), 10);
+          next = Math.min(f.max, Math.max(f.min, next));
+          inp.value = f.dec ? next.toFixed(f.dec) : next;
+          review();
+        });
+      });
+      fieldsEl.appendChild(d);
+    });
+  }
+  function openAdj(key, card){
+    curCfg = ADJ[key]; curCard = card;
+    if(!curCfg) return;
+    document.getElementById('adjTitle').textContent = curCfg.title;
+    curGran = 'day';
+    document.querySelectorAll('#adjGran button').forEach(function(x){ x.classList.toggle('on', x.getAttribute('data-g')==='day'); });
+    document.getElementById('adjDateWrap').style.display = 'none';
+    renderAll();
+    buildFields();
+    var hasFields = curCfg.fields.length > 0;
+    document.querySelector('.adj-edit').style.display = hasFields ? '' : 'none';
+    if(hasFields){ review(); }
+    else { adjGo.disabled = false; }
+    adjGo.textContent = curCfg.actLabel || '交给我执行';
+    adjOv.classList.add('on');
+  }
+  function closeAdj(){ adjOv.classList.remove('on'); }
+  document.querySelectorAll('[data-adjust]').forEach(function(btn){
+    btn.addEventListener('click', function(e){ e.preventDefault(); openAdj(btn.getAttribute('data-adjust'), btn.closest('.dcard')); });
+  });
+  document.getElementById('adjClose').addEventListener('click', closeAdj);
+  adjOv.addEventListener('click', function(e){ if(e.target === adjOv) closeAdj(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && adjOv.classList.contains('on')) closeAdj(); });
+
+  /* 按调整值执行 → 复用卡片完成流程 */
+  adjGo.addEventListener('click', function(){
+    if(!curCfg || !curCard) return;
+    if(curCfg.fields.length === 0){
+      var take = curCard.querySelector('[data-act]');
+      closeAdj();
+      if(take) take.click();
+      return;
+    }
+    var v = vals();
+    var g = curCfg.go(v);
+    closeAdj();
+    curCard.querySelector('.dc-done .msg').textContent = g.same ? g.sameNote : '按你调整的值执行：' + g.note;
+    curCard.classList.add('ok');
+    dismiss(curCard);
+    if(pushFeed) pushFeed(g.feed[0], g.feed[1], g.adopt ? '采纳' : '调整后采纳');
+  });
+
+  /* ===== 右栏「刚刚发生」实时流（实际执行的动作：我自动 + 采纳/调整后采纳；未采纳不进流） ===== */
+  var pushFeed = null;
+  (function(){
+    var feed = document.getElementById('tdFeed');
+    if(!feed) return;
+    var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var pool = [
+      {a:'暂停计划 42108', d:'持续亏损，已止住'},
+      {a:'调低计划 43002 目标投产比', d:'消耗节奏过快'},
+      {a:'上调计划 41866 预算', d:'投产比持续达标'},
+      {a:'追投素材 9017', d:'转化稳定'},
+      {a:'删除素材 9832', d:'成交未跟上消耗'},
+      {a:'计划 42731 维持现状', d:'各项指标安全'},
+      {a:'调高计划 40233 目标投产比', d:'回收放缓'},
+      {a:'下调计划 44120 预算', d:'边际转化下降'}
+    ];
+    function fmt(off){ var d = new Date(Date.now() - off*60000); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+    function mk(item, off, fresh, byYou){
+      var div = document.createElement('div');
+      div.className = 'td-ev' + (fresh && !reduced ? ' fresh' : '');
+      div.innerHTML = '<time></time><div><strong></strong><span></span></div>';
+      div.querySelector('time').textContent = fmt(off);
+      var st = div.querySelector('strong');
+      st.textContent = item.a;
+      if(byYou){ var t = document.createElement('i'); t.className = 'by-you' + (byYou === '调整后采纳' ? ' adj' : ''); t.textContent = byYou === true ? '采纳' : byYou; st.appendChild(t); }
+      div.querySelector('div > span').textContent = item.d;
+      return div;
+    }
+    function prepend(node){
+      feed.insertBefore(node, feed.firstChild);
+      while(feed.children.length > 7) feed.removeChild(feed.lastChild);
+    }
+    for(var k = 0; k < 5; k++){ feed.appendChild(mk(pool[k], 2 + k*7, false, false)); }
+    var idx = 5;
+    if(!reduced){
+      setInterval(function(){
+        if(document.hidden) return;
+        prepend(mk(pool[idx % pool.length], 0, true, false));
+        idx++;
+      }, 6200);
+    }
+    pushFeed = function(action, detail, tag){ prepend(mk({a: action, d: detail}, 0, true, tag || '采纳')); };
+  })();
+
+  /* 跨页跳转 */
+  document.querySelectorAll('[data-goto]').forEach(function(el){
+    el.addEventListener('click', function(e){
+      e.preventDefault();
+      try{ parent.postMessage({type:'goto', view: el.getAttribute('data-goto')}, '*'); }catch(err){}
+    });
+  });
+
+  /* 放权引导卡 */
+  document.getElementById('empSkip').addEventListener('click', function(){
+    var card = document.getElementById('empower');
+    card.style.transition = 'opacity .4s, transform .4s';
+    card.style.opacity = '0'; card.style.transform = 'translateX(28px)';
+    setTimeout(function(){ card.style.display = 'none'; }, 420);
+  });
+
+  /* 低优先级:单列表 + 类型筛选 + 分页(100 条也成立) */
+  var PRODUCTS = ['小风扇','凉鞋女款','短袖基础款','桌面风扇','防晒帽','凉感T恤','拖鞋情侣款','冰丝袖套','遮阳伞','驱蚊手环','凉席双人款','速干裤','防晒冰袖','旅行包','腰包胸包','墨镜偏光','沙滩裤','果汁杯','便携榨汁机','车载风扇','颈挂风扇','冰感喷雾','防晒口罩'];
+  function planName(i){
+    var hh = ('0' + (8 + i % 14)).slice(-2), mm = ('0' + (i * 7 % 60)).slice(-2), ss = ('0' + (i * 13 % 60)).slice(-2);
+    return '2026-06-0' + (1 + i % 8) + '_' + PRODUCTS[i % PRODUCTS.length] + '_' + hh + ':' + mm + ':' + ss + '（' + (3 + i % 28) + '/' + (2.5 + (i % 18) / 10).toFixed(1) + '）';
+  }
+  function planId(i){ return 'ID ' + String(PLAN-2404（演示） + i * 739111); }
+  var LQ = [];
+  (function(){
+    for(var i = 0; i < 23; i++){
+      var a = (2.6 + (i % 12) / 10).toFixed(1), b = (parseFloat(a) + (i % 2 ? 0.1 : -0.1)).toFixed(1);
+      LQ.push({ t:'roi', n: planName(i), id: planId(i), act: a + ' → ' + b, why: ['轻微偏离','量未起','回收略缓'][i % 3] });
+    }
+    for(var j = 0; j < 9; j++){
+      LQ.push({ t:'bud', n: planName(j + 40), id: planId(j + 40), act: '日预算 ' + (j % 3 === 1 ? '-' : '+') + '¥' + ((1 + j % 5) * 100), why: ['稳定达标','连续 2 天花满','边际转化放缓'][j % 3] });
+    }
+    for(var k = 0; k < 5; k++){
+      LQ.push({ t:'mat', n: '素材 ID MAT-108' + (82230 + k * 991), id: '挂在 ' + planName(k + 70), act: ['权重下调','追投 ¥300','删除'][k % 3], why: ['转化连降 3 天','同组转化第一','成交未跟上消耗'][k % 3] });
+    }
+  })();
+  var lqFilter = 'all', lqPage = 1, LQPG = 6;
+  var TNAME = { all:'全部', roi:'调投产比', bud:'改预算', mat:'素材' };
+  function lqRows(){ return LQ.filter(function(r){ return lqFilter === 'all' || r.t === lqFilter; }); }
+  function lqLeft(rows){ return rows.filter(function(r){ return !r.done; }).length; }
+  function lqRender(){
+    var rows = lqRows();
+    var pages = Math.max(1, Math.ceil(rows.length / LQPG));
+    if(lqPage > pages) lqPage = pages;
+    var slice = rows.slice((lqPage - 1) * LQPG, lqPage * LQPG);
+    document.getElementById('lqRows').innerHTML = slice.map(function(r){
+      var idx = LQ.indexOf(r);
+      return '<div class="b-row4' + (r.done ? ' done' : '') + '"><div class="b-pn">' + r.n + '<i>' + r.id + '</i></div><span class="b-act">' + r.act + '</span><span class="b-why">' + r.why + '</span><button class="b-take" data-i="' + idx + '">' + (r.done ? '✓ 已执行' : '采纳') + '</button></div>';
+    }).join('');
+    var pg = '<span class="info">第 ' + lqPage + '/' + pages + ' 页</span>';
+    pg += '<button data-pg="prev"' + (lqPage === 1 ? ' disabled' : '') + '>‹</button>';
+    for(var p = 1; p <= pages; p++) pg += '<button data-pg="' + p + '"' + (p === lqPage ? ' class="on"' : '') + '>' + p + '</button>';
+    pg += '<button data-pg="next"' + (lqPage === pages ? ' disabled' : '') + '>›</button>';
+    document.getElementById('lqPg').innerHTML = pg;
+    /* 计数:总数 + 各筛选 chip + 批量按钮随筛选 */
+    var totalLeft = lqLeft(LQ);
+    document.getElementById('lqN').textContent = totalLeft;
+    var tb = document.getElementById('tdBatch'); if(tb) tb.textContent = totalLeft;
+    document.querySelectorAll('#lqSeg button').forEach(function(b){
+      var t = b.getAttribute('data-t');
+      var left = lqLeft(t === 'all' ? LQ : LQ.filter(function(r){ return r.t === t; }));
+      b.textContent = TNAME[t] + ' ' + left;
+    });
+    var curLeft = lqLeft(rows);
+    var all = document.getElementById('lqAll');
+    if(curLeft === 0){ all.textContent = '✓ 已全部执行'; all.disabled = true; all.classList.remove('pri'); all.classList.add('ghost'); }
+    else { all.textContent = '采纳全部 ' + curLeft + ' 条' + (lqFilter === 'all' ? '' : '（' + TNAME[lqFilter] + '）'); all.disabled = false; all.classList.add('pri'); all.classList.remove('ghost'); }
+  }
+  document.getElementById('lqSeg').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    lqFilter = b.getAttribute('data-t'); lqPage = 1;
+    lqRender();
+  });
+  document.getElementById('lqPg').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b || b.disabled) return;
+    var v = b.getAttribute('data-pg');
+    if(v === 'prev') lqPage--; else if(v === 'next') lqPage++; else lqPage = +v;
+    lqRender();
+  });
+  document.getElementById('lqRows').addEventListener('click', function(e){
+    var b = e.target.closest('.b-take'); if(!b) return;
+    var r = LQ[+b.getAttribute('data-i')];
+    if(r.done) return;
+    r.done = true;
+    lqRender();
+  });
+  document.getElementById('lqAll').addEventListener('click', function(){
+    var rows = lqRows().filter(function(r){ return !r.done; });
+    if(!rows.length) return;
+    rows.forEach(function(r){ r.done = true; });
+    lqRender();
+    if(pushFeed) pushFeed('批量执行 ' + rows.length + ' 条「' + TNAME[lqFilter] + '」低优先级建议', '已完成，记入执行日志，可撤回');
+  });
+  lqRender();
+
+})();
+</script>
+</body>
+</html>

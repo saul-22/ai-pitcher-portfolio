@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 智能投手 · Boss 报告卡片 · 场景切换 Demo</title>
+  <!-- 使用系统字体栈，无远程字体依赖 -->
+  <link href="card.css" rel="stylesheet">
+</head>
+<body class="theme-light">
+
+  <!-- ═══ 场景切换栏 ═══ -->
+  <div class="demo-bar">
+    <span style="color:#888;font-size:11px;margin-right:8px">场景</span>
+    <button onclick="loadScene('weekly')" class="active" id="btn-weekly">周报 · 增长</button>
+    <button onclick="loadScene('monthly')" id="btn-monthly">月报 · 需关注</button>
+    <button onclick="loadScene('daily')" id="btn-daily">日报 · 首期</button>
+    <span class="sep">│</span>
+    <span style="color:#888;font-size:11px;margin-right:4px">主题</span>
+    <button onclick="switchTheme('theme-light')" class="active" id="btn-light">Light</button>
+    <button onclick="switchTheme('theme-warm')" id="btn-warm">Warm</button>
+    <span class="tag" id="scene-tag">strong_growth · top3_summary</span>
+    <span class="tag" style="background:#fef3c7;color:#92400e">演示数据 · 全部为合成样例</span>
+  </div>
+  <div class="demo-spacer"></div>
+
+  <!-- intro_text（动态） -->
+  <div class="im-text" id="im-intro"></div>
+
+  <!-- PNG 卡片（动态） -->
+  <div class="page page-content" id="card"></div>
+
+  <!-- outro_text（动态） -->
+  <div class="im-text" id="im-outro"></div>
+
+
+  <!-- ═══ 场景数据 ═══ -->
+  <script>
+  // ────────────────────────────────────────────────────────
+  // 3 个场景的数据（对应 3 个 Render Pack JSON 示例）
+  // ────────────────────────────────────────────────────────
+  const SCENES = {
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 场景 1：周报 · strong_growth · top3_summary
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    weekly: {
+      theme: 'theme-warm',
+      tag: 'strong_growth · top3_summary',
+      intro: '时间：2026-04-13 ~ 2026-04-19\n账户：星芽亲子旗舰店 等 8 个',
+      outro: '本周投放全面开花，尿不湿系列 4/15 单日 <strong>¥12.8万</strong> 创月内新高。\n自营渠道增速领先，奶粉系列连续四周稳定放量。',
+      brand: {
+        title: 'AI 智能投手 · 周度投放成绩单',
+        date: '星芽亲子旗舰店 · 2026.04.13 – 04.19',
+        scope: '覆盖 8 账户 · 124 计划',
+      },
+      kpi: {
+        hero: { val: '¥145.8万', lbl: '成交金额', delta: '+12.3%', deltaCls: 'up' },
+        sparkline: {
+          color: 'var(--color-accent)',
+          polygon: '0,28 33,22 67,18 100,16 133,9 167,5 200,2 200,36 0,36',
+          line: '0,28 33,22 67,18 100,16 133,9 167,5 200,2',
+          circle: { cx: 200, cy: 2 },
+          mean: 16,
+        },
+        sparklineLbl: '7 天成交走势 · 虚线为均值',
+        secs: [
+          { val: '2.95', lbl: '支付投产比', delta: '+11.3%', deltaCls: 'up' },
+          { val: '¥42.8万', lbl: '利润', delta: '+18.6%', deltaCls: 'up' },
+        ],
+      },
+      accounts: {
+        title: '账户诊断',
+        badge: { cls: 'badge-positive', text: '8 户均盈利' },
+        rows: [
+          { name: '自营-商品', hp: 'up', hpText: '增长中', owner: '优化师 A', rev: '¥62.3万', roi: 'ROI 3.25', delta: '+15.2%', deltaCls: 'positive', barPct: 43, note: '尿不湿系列 4/15 单日 ¥12.8万 投产比 3.4，抓住流量窗口', noteCls: 'pos' },
+          { name: '自营-品牌', hp: 'up', hpText: '增长中', owner: '优化师 B', rev: '¥26.5万', roi: 'ROI 2.68', delta: '+8.5%',  deltaCls: 'positive', barPct: 18, note: '奶粉系列连续 4 周投产比 2.5+，持续小幅扩投', noteCls: 'pos' },
+          { name: '达人-头部', hp: 'ok', hpText: '运行中', owner: '优化师 C', rev: '¥20.1万', roi: 'ROI 2.42', delta: '+5.3%',  deltaCls: 'positive', barPct: 14, note: '达人内容测试期结束，进入稳定放量期', noteCls: 'neu' },
+          { name: '其他 5 户', agg: true, rev: '¥36.9万', roi: '均 ROI 2.60', delta: '+6.1%', deltaCls: 'positive', barPct: 25 },
+        ],
+        footnote: '自营渠道贡献 61% 收入且增速领先，达人-头部进入稳定期，其他 5 户整体平稳。',
+      },
+      status: {
+        variant: 'peak',
+        title: '本周高光',
+        kicker: '4/15 · 自营-商品 尿不湿系列',
+        num: '¥12.8万',
+        sub: '投产比 3.4 <span class="sub-pos">超均值 76%</span>',
+      },
+      stories: {
+        title: '本周动态',
+        items: [
+          { meta: '4/15 · 尿不湿',  body: '投产比冲到 3.4，即时放量抓住流量窗口，单日 ¥12.8万 创月内新高' },
+          { meta: '本周 · 奶粉系列', body: '连续 4 周投产比 2.5+，持续小幅扩投贡献 ¥26.5万' },
+        ],
+      },
+      highlights: {
+        title: '本周关注',
+        items: [
+          '婴儿湿巾连续三周投产比上升',
+          '周末日均 ¥23.5万，工作日 ¥19.2万',
+        ],
+      },
+    },
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 场景 2：月报 · needs_attention · show_all
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    monthly: {
+      theme: 'theme-light',
+      tag: 'needs_attention · show_all',
+      intro: '时间：2026-04-01 ~ 2026-04-30\n账户：青禾母婴生活馆 · 旗舰店 等 3 个',
+      outro: '四月整体消耗稳定，投产比下降 6.3% 主要来自生活馆婴童用品月中回落。\n相关预算已及时收缩，月末回升至 <strong>1.85</strong>。',
+      brand: {
+        title: 'AI 智能投手 · 月度投放成绩单',
+        date: '青禾母婴生活馆 · 2026.04',
+        scope: '覆盖 3 账户 · 45 计划',
+      },
+      kpi: {
+        hero: { val: '¥218.5万', lbl: '成交金额', delta: '+2.1%', deltaCls: 'up' },
+        sparkline: {
+          color: 'var(--amber-500)',
+          polygon: '0,10 9,9 17,12 26,10 35,13 43,11 52,14 61,13 70,16 78,14 87,18 96,16 104,20 113,18 122,22 130,21 139,25 148,23 157,27 165,25 174,29 183,27 191,25 200,23 200,36 0,36',
+          line: '0,10 9,9 17,12 26,10 35,13 43,11 52,14 61,13 70,16 78,14 87,18 96,16 104,20 113,18 122,22 130,21 139,25 148,23 157,27 165,25 174,29 183,27 191,25 200,23',
+          circle: { cx: 200, cy: 23 },
+          mean: 19,
+        },
+        sparklineLbl: '近 6 月周度成交走势 · 虚线为均值',
+        secs: [
+          { val: '2.05', lbl: '支付投产比', delta: '−6.3%', deltaCls: 'down' },
+          { val: '¥34.2万', lbl: '利润', delta: '−4.8%', deltaCls: 'down' },
+        ],
+      },
+      accounts: {
+        title: '账户诊断',
+        badge: { cls: 'badge-warning', text: '1 户调整中' },
+        rows: [
+          { name: '旗舰店', hp: 'up',  hpText: '增长中', owner: '优化师 D', rev: '¥125.6万', roi: 'ROI 2.25', delta: '+1.2%',  deltaCls: 'positive', barPct: 57, note: '婴儿奶粉系列稳定贡献收入，投产比全月站稳 2.2 以上', noteCls: 'pos' },
+          { name: '生活馆', hp: 'adj', hpText: '调整中', owner: '优化师 E', rev: '¥58.3万',  roi: 'ROI 1.85', delta: '−8.5%',  deltaCls: 'negative', barPct: 27, note: '婴童用品 4/10-18 投产比跌至 1.5，预算收缩后月末回升至 1.85', noteCls: 'warn' },
+          { name: '会员店', hp: 'ok',  hpText: '运行中', owner: '优化师 F', rev: '¥34.6万',  roi: 'ROI 2.10', delta: '−3.2%',  deltaCls: 'negative', barPct: 16, note: '玩具类目短期波动，月末投产比回到 2.1', noteCls: 'neu' },
+        ],
+        footnote: '旗舰店婴儿奶粉稳健贡献六成收入，生活馆婴童用品经月中调整后月末回升，会员店玩具类目短期波动无趋势性问题。',
+      },
+      status: {
+        variant: 'handled',
+        title: '已处置',
+        kicker: '生活馆 · 婴童用品',
+        label: '月中投产比探底 1.5，收缩后回升',
+        num: '1.85',
+        sub: '月末 <span class="sub-warn">已回升</span>',
+      },
+      stories: {
+        title: '本月动态',
+        items: [
+          { meta: '4/20 起 · 旗舰店奶粉',    body: '连续 7 天投产比 2.5+，顺势小幅扩投' },
+          { meta: '月底 3 天 · 会员店玩具', body: '投产比反弹至 2.3，短期波动已收尾' },
+        ],
+      },
+      highlights: {
+        title: '本月关注',
+        items: [
+          '婴儿奶粉全月投产比 2.4，是最稳的基本盘',
+          '周末日均 ¥8.5万，工作日 ¥6.2万',
+        ],
+      },
+    },
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // 场景 3：日报 · first_report · single
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    daily: {
+      theme: 'theme-light',
+      tag: 'first_report · single',
+      intro: '时间：2026-05-08\n账户：初茶屋饮品 · 自营-商品',
+      outro: '首日投放平稳上线，明日起可对比昨日看走势变化。',
+      brand: {
+        title: 'AI 智能投手 · 日度投放成绩单',
+        date: '初茶屋饮品 · 2026.05.08',
+        scope: '覆盖 1 账户 · 8 计划',
+      },
+      kpi: {
+        hero: { val: '¥3.6万', lbl: '成交金额', delta: '', deltaCls: '' },
+        noSparkline: true,
+        firstReportNote: '首日数据已记录，明日起显示近 7 天走势',
+        secs: [
+          { val: '1.85',    lbl: '支付投产比', delta: '', deltaCls: '' },
+          { val: '¥0.6万',  lbl: '利润',       delta: '', deltaCls: '' },
+        ],
+      },
+      accounts: {
+        // single 场景：展开产品 top 3
+        title: '产品拆解',
+        badge: { cls: 'badge-neutral', text: '4 款入市' },
+        rows: [
+          { name: '乌龙茶包', rev: '¥1.4万', roi: 'ROI 2.10', barPct: 39, note: '首日表现最佳，15:00 投产比冲到 2.4', noteCls: 'pos' },
+          { name: '抹茶粉',   rev: '¥0.9万', roi: 'ROI 1.75', barPct: 25 },
+          { name: '柠檬茶',   rev: '¥0.7万', roi: 'ROI 1.90', barPct: 19 },
+          { name: '花果茶',   rev: '¥0.6万', roi: 'ROI 1.65', barPct: 17, note: '投产比 1.65 偏低，出价策略已调整', noteCls: 'warn' },
+        ],
+        footnote: '首日 4 款产品入市，乌龙茶包占近四成收入，整体投产比 1.85 起步稳定。',
+      },
+      status: {
+        variant: 'default',
+        title: '首期报告',
+        kicker: '2026.05.08 · 首投',
+        label: '4 款产品均有成交，起步无空档',
+        sub: '明日起可对比昨日变化',
+      },
+      stories: {
+        title: '今日动态',
+        items: [
+          { meta: '15:00 · 乌龙茶包', body: '投产比冲到 2.4，顺势微调扩投' },
+          { meta: '全天 · 花果茶',    body: '投产比 1.65 偏低，出价策略已调整' },
+        ],
+      },
+      highlights: {
+        title: '今日关注',
+        items: [
+          '14-16 点投产比均值 2.3，全天最高',
+          '4 款产品均有成交',
+        ],
+      },
+    },
+  };
+
+  // ────────────────────────────────────────────────────────
+  // 渲染
+  // ────────────────────────────────────────────────────────
+  function render(s) {
+    document.getElementById('im-intro').textContent = s.intro;
+    document.getElementById('im-outro').innerHTML = s.outro;
+    document.getElementById('scene-tag').textContent = s.tag;
+
+    const card = document.getElementById('card');
+    card.innerHTML = `
+      <div class="card-brand page-brand">
+        <div class="page-brand-logo"><span class="page-brand-dot"></span> ${s.brand.title}</div>
+        <div class="card-brand-meta">
+          <div class="date">${s.brand.date}</div>
+          <div class="scope">${s.brand.scope}</div>
+        </div>
+      </div>
+
+      <div class="card-kpi">
+        <div class="card-kpi-hero">
+          <div class="card-kpi-val">${s.kpi.hero.val}</div>
+          <div class="card-kpi-lbl">${s.kpi.hero.lbl}${s.kpi.hero.delta ? ` <span class="card-kpi-delta ${s.kpi.hero.deltaCls}">${s.kpi.hero.delta}</span>` : ''}</div>
+          ${s.kpi.noSparkline ? `
+            <div style="margin-top:var(--space-3);font-size:var(--text-xs);color:var(--color-text-muted);line-height:1.6">
+              ${s.kpi.firstReportNote}
+            </div>
+          ` : `
+            <svg class="card-sparkline" viewBox="0 0 200 36" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="${s.kpi.sparkline.polygon}" fill="${s.kpi.sparkline.color}" opacity="0.12"/>
+              <line x1="0" y1="${s.kpi.sparkline.mean}" x2="200" y2="${s.kpi.sparkline.mean}" stroke="currentColor" stroke-width="0.6" stroke-dasharray="4,3" opacity="0.4"/>
+              <polyline points="${s.kpi.sparkline.line}" fill="none" stroke="${s.kpi.sparkline.color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="${s.kpi.sparkline.circle.cx}" cy="${s.kpi.sparkline.circle.cy}" r="2.5" fill="${s.kpi.sparkline.color}"/>
+            </svg>
+            <div class="card-spark-lbl">${s.kpi.sparklineLbl}</div>
+          `}
+        </div>
+        <div class="card-kpi-sec">
+          ${s.kpi.secs.map(k => `
+            <div class="card-kpi-item">
+              <div class="card-kpi-val">${k.val}</div>
+              <div class="card-kpi-lbl">${k.lbl}${k.delta ? ` <span class="card-kpi-delta ${k.deltaCls}">${k.delta}</span>` : ''}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <div class="card-col-left">
+          <div class="section-header" style="margin-bottom:0">
+            <div class="section-title">${s.accounts.title}</div>
+            ${s.accounts.badge ? `<span class="badge ${s.accounts.badge.cls}">${s.accounts.badge.text}</span>` : ''}
+          </div>
+          <div class="mod-accts">
+            ${s.accounts.rows.map(r => `
+              <div class="acct-row${r.agg ? ' agg' : ''}">
+                <div class="acct-head">
+                  <span class="acct-name">${r.name}</span>
+                  ${r.hp ? `<span class="hp hp-${r.hp}">${r.hpText}</span>` : ''}
+                  ${r.owner ? `<span class="acct-owner">${r.owner}</span>` : ''}
+                  <span class="acct-rev">${r.rev}</span>
+                  <span class="acct-roi">${r.roi}</span>
+                  ${r.delta ? `<span class="delta delta-${r.deltaCls}">${r.delta}</span>` : ''}
+                </div>
+                <div class="acct-bar">
+                  <div class="acct-bar-track"><div class="acct-bar-fill" style="width:${r.barPct}%"></div></div>
+                  <span class="acct-bar-pct">${r.barPct}%</span>
+                </div>
+                ${r.note ? `<div class="acct-note acct-note-${r.noteCls}">${r.note}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+          <div class="mod-accts-footnote">${s.accounts.footnote}</div>
+        </div>
+
+        <div class="card-col-right">
+          <div class="mod">
+            <div class="mod-title">${s.status.title}</div>
+            <div class="mod-status${s.status.variant !== 'default' ? ' mod-status-' + s.status.variant : ''}">
+              ${s.status.kicker ? `<div class="mod-status-kicker">${s.status.kicker}</div>` : ''}
+              ${s.status.label ? `<div class="mod-status-label">${s.status.label}</div>` : ''}
+              ${s.status.num ? `<div class="mod-status-num">${s.status.num}</div>` : ''}
+              ${s.status.sub ? `<div class="mod-status-sub">${s.status.sub}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="mod mod-grow">
+            <div class="mod-title">${s.stories.title}</div>
+            <div class="mod-stories">
+              ${s.stories.items.map(i => `
+                <div class="mod-story">
+                  <div class="mod-story-meta">${i.meta}</div>
+                  <div class="mod-story-body">${i.body}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="mod">
+            <div class="mod-title">${s.highlights.title}</div>
+            <div class="mod-highlights">
+              ${s.highlights.items.map(i => `<div class="mod-hl">${i}</div>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer">数据来源：AI 智能投手</div>
+    `;
+
+    // 同步主题（周报强增长 → warm；其他 light）
+    document.body.className = s.theme;
+    document.getElementById('btn-light').classList.toggle('active', s.theme === 'theme-light');
+    document.getElementById('btn-warm').classList.toggle('active', s.theme === 'theme-warm');
+  }
+
+  function loadScene(key) {
+    ['weekly', 'monthly', 'daily'].forEach(k => {
+      document.getElementById('btn-' + k).classList.toggle('active', k === key);
+    });
+    render(SCENES[key]);
+  }
+
+  function switchTheme(theme) {
+    document.body.className = theme;
+    document.getElementById('btn-light').classList.toggle('active', theme === 'theme-light');
+    document.getElementById('btn-warm').classList.toggle('active', theme === 'theme-warm');
+  }
+
+  // 初始加载周报
+  loadScene('weekly');
+  </script>
+
+</body>
+</html>

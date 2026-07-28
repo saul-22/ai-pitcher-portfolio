@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>目标设定 · AI 智能投手</title>
+<style>
+/* 系统字体栈，无远程字体依赖 */
+
+:root{
+  --primary-700:#3562a6;--primary-600:#4578be;--primary-500:#5b91d4;
+  --primary-100:#e4eefb;--primary-50:#f1f6fd;
+  --ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;
+  --hair:#e2e8f0;--hair-2:#f1f5f9;
+  --success:#22a67a;--success-light:#f0fdf6;
+  --danger:#dc5a5a;--danger-light:#fef5f5;
+  --warning:#e09422;--warning-light:#fefcf3;
+  --num:'Manrope';--mono:'IBM Plex Mono',ui-monospace,monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased;
+  background:#fff radial-gradient(840px 240px at 50% -120px,rgba(91,145,212,.13),transparent 70%) no-repeat;padding-bottom:74px}
+.page{max-width:1280px;margin:0 auto;padding:96px 40px 56px}
+.num{font-family:var(--num),var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+a{color:var(--primary-600);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+.reveal{opacity:0;transform:translateY(12px);animation:rise .7s cubic-bezier(.16,.84,.3,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+.d1{animation-delay:.04s}.d2{animation-delay:.12s}.d3{animation-delay:.2s}.d4{animation-delay:.28s}.d5{animation-delay:.36s}
+
+.lede{padding-bottom:26px;border-bottom:1px solid var(--hair);margin-bottom:10px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+.lede h1{font-size:22px;font-weight:740;letter-spacing:-.02em}
+.lede p{font-size:13px;color:var(--ink-3);margin-top:7px;line-height:1.7}
+.lede .smart-btn{flex:0 0 auto;margin-bottom:4px}
+
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}
+.sec-head h2{font-size:15px;font-weight:730}
+.sec-head p{font-size:12px;color:var(--ink-3)}
+.sec-head .sp{flex:1}
+.section{padding:30px 0}
+.section + .section{border-top:1px solid var(--hair)}
+
+.btn{height:34px;display:inline-flex;align-items:center;gap:7px;padding:0 15px;border-radius:9px;font-size:12.5px;font-weight:650;cursor:pointer;border:0;font-family:inherit;transition:transform .15s,box-shadow .15s,border-color .15s}
+.btn.pri{background:linear-gradient(160deg,var(--primary-500),var(--primary-600));color:#fff;box-shadow:0 6px 14px -6px rgba(69,120,190,.7)}
+.btn.pri:hover{transform:translateY(-1px)}
+.btn.ghost{background:#fff;color:var(--ink-2);border:1px solid var(--hair)}
+.btn.ghost:hover{border-color:var(--ink-3)}
+.btn.sm{height:28px;padding:0 11px;font-size:11.5px}
+
+/* ===== 授权 ===== */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:760px}
+.mode{border:1.5px solid var(--hair);border-radius:14px;padding:18px 20px;cursor:pointer;transition:border-color .15s,background .15s;position:relative}
+.mode:hover{border-color:#a3c6ed}
+.mode.on{border-color:var(--primary-600);background:linear-gradient(180deg,var(--primary-50),#fff 70%)}
+.mode .radio{position:absolute;top:18px;right:18px;width:18px;height:18px;border-radius:50%;border:2px solid var(--hair)}
+.mode.on .radio{border-color:var(--primary-600);background:radial-gradient(circle at center,var(--primary-600) 0 5px,#fff 5.5px)}
+.mode h3{font-size:14px;font-weight:720}
+.mode h3 .lv{font-family:var(--mono);font-size:10px;color:var(--primary-600);background:var(--primary-50);border:1px solid var(--primary-100);border-radius:5px;padding:2px 6px;margin-right:8px;vertical-align:1px}
+.mode p{font-size:12px;color:var(--ink-2);margin-top:8px;line-height:1.7}
+.mode .fit{font-size:11px;color:var(--ink-3);margin-top:8px}
+.caps{max-width:760px;margin-top:22px}
+.cap{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:13px 2px;border-bottom:1px solid var(--hair-2)}
+.cap:last-child{border-bottom:0}
+.cap .tt{font-size:13px;font-weight:640}
+.cap .tt span{display:block;font-size:11.5px;color:var(--ink-3);font-weight:400;margin-top:3px;line-height:1.5}
+.toggle{width:40px;height:23px;border-radius:99px;background:var(--hair);position:relative;cursor:pointer;transition:background .18s;flex:0 0 auto}
+.toggle:after{content:"";position:absolute;top:2.5px;left:2.5px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(15,23,42,.25);transition:left .18s}
+.toggle.on{background:var(--primary-600)}
+.toggle.on:after{left:19.5px}
+.cap.night{background:linear-gradient(135deg,#101a30,#1b2c4d);border:0;border-radius:12px;padding:14px 16px;margin-top:14px}
+.cap.night .tt{color:#cfe2ff}
+.cap.night .tt span{color:#8499bd}
+
+/* ===== 托管范围 ===== */
+.scopebar{display:flex;flex-direction:column;gap:10px;max-width:920px}
+/* ===== 分页 ===== */
+.pg-btns{display:flex;gap:4px;align-items:center}
+.pg-btns button{min-width:30px;height:30px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;font-weight:620;color:var(--ink-2);cursor:pointer;font-family:var(--num);padding:0 8px;transition:border-color .15s,color .15s}
+.pg-btns button:hover:not(:disabled){border-color:#a3c6ed;color:var(--primary-600)}
+.pg-btns button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pg-btns button:disabled{opacity:.4;cursor:default}
+.pg-btns .ell{color:var(--ink-3);padding:0 2px;font-size:12px}
+.pg-size{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3)}
+.pg-size select{height:30px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:12px;color:var(--ink-2);font-family:inherit;padding:0 6px;outline:0;cursor:pointer}
+
+/* ===== 账户配置表 + 抽屉 ===== */
+tbody tr{cursor:pointer;transition:background .13s}
+.cov-tx{font-size:12.5px;color:var(--ink-2)}
+.roi-cell{display:flex;align-items:center;gap:6px}
+.calc-ic{width:30px;height:33px;border:1px solid var(--hair);border-radius:8px;background:#fff;color:var(--ink-3);cursor:pointer;display:grid;place-items:center;flex:0 0 auto;transition:color .15s,border-color .15s}
+.calc-ic:hover{color:var(--primary-600);border-color:#a3c6ed}
+.roi-sub{font-size:10.5px;color:var(--ink-3);margin-top:5px}
+.roi-hint{font-size:10.5px;color:var(--ink-3);margin-top:2px;min-height:0}
+.roi-hint.warn{color:var(--warning)}
+.pn .ptag{margin-left:6px;vertical-align:1px}
+.cur-roi{font-family:var(--num);font-weight:740;font-variant-numeric:tabular-nums;font-size:14px}
+.cur-roi.ok{color:var(--success)}
+.cur-roi.warn{color:var(--warning)}
+.cur-roi.bad{color:var(--danger)}
+
+/* ===== 让我帮你配 ===== */
+.smart-btn{height:34px;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;border:1px solid var(--primary-100);background:linear-gradient(135deg,var(--primary-50),#fff);color:var(--primary-700);font-size:12.5px;font-weight:680;cursor:pointer;font-family:inherit;transition:transform .15s,box-shadow .15s}
+.smart-btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px -8px rgba(69,120,190,.5)}
+.smart-btn .o{width:18px;height:18px;border-radius:6px;background:linear-gradient(140deg,#7dade2,var(--primary-700));color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center}
+.sm-ov{position:fixed;inset:0;background:rgba(15,23,42,.36);backdrop-filter:blur(3px);z-index:1500;display:none;align-items:center;justify-content:center;padding:24px}
+.sm-ov.on{display:flex}
+.sm{width:580px;max-width:94vw;max-height:88vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 32px 90px -20px rgba(15,23,42,.5);animation:calIn .25s cubic-bezier(.16,.84,.3,1)}
+.sm-head{padding:18px 24px;border-bottom:1px solid var(--hair);display:flex;align-items:flex-start;gap:12px}
+.sm-head .o{width:30px;height:30px;border-radius:9px;background:linear-gradient(140deg,#7dade2,var(--primary-700));color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;flex:0 0 auto}
+.sm-head h3{font-size:14.5px;font-weight:730}
+.sm-head p{font-size:12px;color:var(--ink-3);margin-top:4px;line-height:1.6}
+.sm-head .sp{flex:1}
+.sm-body{padding:14px 24px}
+.diff{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 2px;border-bottom:1px solid var(--hair-2);align-items:start}
+.diff:last-child{border-bottom:0}
+.diff .ck{margin-top:2px}
+.diff strong{font-size:13px;font-weight:680;line-height:1.5}
+.diff strong .chg{font-family:var(--mono);font-size:10px;color:var(--primary-600);background:var(--primary-50);border-radius:4px;padding:2px 6px;margin-left:7px;white-space:nowrap}
+.diff .why{font-size:11.5px;color:var(--ink-3);margin-top:4px;line-height:1.6}
+.sm-foot{display:flex;gap:10px;padding:16px 24px 20px;border-top:1px solid var(--hair)}
+.sm-foot .hint{margin-left:auto;font-size:11px;color:var(--ink-3);align-self:center}
+.cov-tx b{font-weight:740}
+.cov-tx b.warn{color:var(--warning)}
+.lv-chip{font-family:var(--mono);font-size:10px;font-weight:700;border-radius:5px;padding:3px 8px;white-space:nowrap}
+.lv-chip.l1{color:var(--primary-700);background:var(--primary-50)}
+.lv-chip.l2{color:var(--success);background:var(--success-light)}
+.lv-chip.off{color:var(--ink-3);background:var(--hair-2)}
+.yn{font-size:11.5px;color:var(--ink-3)}
+.yn.on{color:var(--success);font-weight:620}
+td.r{text-align:right}
+.pager{display:flex;align-items:center;gap:14px;padding:14px 2px 0;font-size:12px;color:var(--ink-3)}
+.pager .info b{font-family:var(--num);color:var(--ink-2);font-weight:650}
+.pager .sp{flex:1}
+.acc-scrim{position:fixed;inset:0;background:rgba(15,23,42,.32);z-index:1290;opacity:0;pointer-events:none;transition:opacity .25s;backdrop-filter:blur(2px)}
+.acc-scrim.on{opacity:1;pointer-events:auto}
+.acc-file{position:fixed;top:84px;right:12px;bottom:12px;width:560px;max-width:94vw;background:#fff;z-index:1300;box-shadow:0 0 0 1px var(--hair),-20px 0 60px -24px rgba(15,23,42,.4);transform:translateX(106%);transition:transform .3s cubic-bezier(.2,.8,.25,1);display:flex;flex-direction:column;border-radius:16px}
+.acc-file.on{transform:none}
+.af-head{display:flex;align-items:flex-start;gap:12px;padding:20px 24px 16px;border-bottom:1px solid var(--hair)}
+.af-head h3{font-size:16px;font-weight:740}
+.af-head .sub{font-size:11.5px;color:var(--ink-3);margin-top:5px}
+.af-head .sp{flex:1}
+.af-body{flex:1;overflow-y:auto;padding:18px 24px 24px}
+.ap-k{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--ink-3);margin:20px 0 12px}
+.ap-k:first-child{margin-top:0}
+.ap-cover{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.ap-cover .cnt{font-size:12.5px;color:var(--ink-2)}
+.ap-cover .cnt b{font-family:var(--num);font-weight:740;font-variant-numeric:tabular-nums}
+.ap-cover .cnt b.warn{color:var(--warning)}
+.modes.slim{grid-template-columns:1fr 1fr;gap:10px;max-width:none}
+.modes.slim .mode{padding:13px 15px}
+.modes.slim .mode p{font-size:11.5px;margin-top:6px;line-height:1.6}
+.optr{display:flex;align-items:center;gap:9px}
+.optr .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(140deg,#7dade2,var(--primary-700));color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;flex:0 0 auto}
+.optr .oi b{display:block;font-size:12.5px;font-weight:660}
+.optr .oi i{font-style:normal;display:block;font-family:var(--mono);font-size:9.5px;color:var(--ink-3);margin-top:1px}
+.af-foot{padding:14px 24px;border-top:1px solid var(--hair);display:flex;gap:10px;border-radius:0 0 16px 16px}
+.af-foot .sp{flex:1}
+.acc .nm{font-size:13.5px;font-weight:680}
+.acc .nm i{font-style:normal;display:block;font-size:11px;color:var(--ink-3);font-weight:400;margin-top:3px}
+.acc .cnt{font-size:12px;color:var(--ink-2);white-space:nowrap}
+.acc .cnt b{font-family:var(--num);font-weight:740;font-variant-numeric:tabular-nums}
+.acc .cnt b.warn{color:var(--warning)}
+.acc .auto{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.scope-note{display:flex;gap:9px;margin-top:14px;padding:12px 14px;border-radius:11px;background:var(--warning-light);border:1px solid rgba(224,148,34,.22);font-size:12.5px;line-height:1.65;color:#8a6420;max-width:920px}
+.scope-note b{color:#6d4c12}
+
+/* ===== 表格工具条小控件（次级操作，区别于 .btn） ===== */
+.tbtn{height:26px;display:inline-flex;align-items:center;padding:0 10px;border:1px solid var(--hair);border-radius:7px;background:#fff;font-size:11.5px;font-weight:600;color:var(--ink-2);cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s;white-space:nowrap}
+.tbtn:hover{border-color:#a3c6ed;color:var(--primary-600)}
+.row-go{font-size:12px;color:var(--primary-600);font-weight:620;white-space:nowrap;cursor:pointer}
+.row-go:hover{text-decoration:underline;text-underline-offset:3px}
+
+/* ===== 管理计划范围 ===== */
+.mng-bar{display:flex;gap:8px;margin-bottom:12px}
+.search{height:32px;display:flex;align-items:center;gap:7px;border:1px solid var(--hair);border-radius:9px;padding:0 11px;background:#fff}
+.search input{border:0!important;outline:0;font-size:12.5px;font-family:inherit;color:var(--ink);background:transparent;box-shadow:none!important}
+.search svg{color:var(--ink-3);flex:0 0 auto}
+.mng-list{max-height:330px;overflow-y:auto;border:1px solid var(--hair);border-radius:11px}
+.mng-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:12px;align-items:center;padding:10px 13px;border-bottom:1px solid var(--hair-2);cursor:pointer}
+.mng-row:hover{background:var(--primary-50)}
+.mng-row:last-child{border-bottom:0}
+.mng-row.hot{background:var(--warning-light)}
+.mng-row.hot:hover{background:#fdf3df}
+.mng-row .pn{font-size:12.5px}
+.mng-row .pn i{font-size:10px}
+.mng-hint{font-size:10.5px;color:var(--warning);white-space:nowrap}
+.mng-hint.on{color:var(--success)}
+.mng-row.more{grid-template-columns:1fr;color:var(--ink-3);font-size:11.5px;cursor:default;background:#fafbfd}
+
+/* ===== 盈亏线 ===== */
+.batchbar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.batchbar .sel-info{font-size:12px;color:var(--ink-3)}
+.batchbar .sel-info b{font-family:var(--num);color:var(--primary-600);font-weight:700}
+.batchbar .sp{flex:1}
+.batch-set{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-2)}
+.batch-set input{width:70px;height:30px;border:1px solid var(--hair);border-radius:8px;font-family:var(--num);font-size:13px;font-weight:650;text-align:right;outline:0}
+.batch-set input:focus{border-color:var(--primary-500)}
+/* 表格卡容器：给表一个清晰边界，治"裸表发虚" */
+.tbl-card{border:1px solid var(--hair);border-radius:13px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.03)}
+.tbl-card th{background:#fafbfd;color:var(--ink-2)}
+.tbl-card thead th{border-bottom:1px solid var(--hair)}
+.tbl-card tbody tr:last-child td{border-bottom:0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;color:var(--ink-3);font-weight:650;text-align:left;padding:10px 12px;border-bottom:1px solid var(--hair);white-space:nowrap;letter-spacing:.02em}
+th.r{text-align:right}
+td{padding:11px 10px;border-bottom:1px solid var(--hair-2);vertical-align:middle}
+td.r{text-align:right}
+tbody tr:hover{background:var(--primary-50)}
+.ck{width:16px;height:16px;border:1.5px solid var(--hair);border-radius:5px;cursor:pointer;display:inline-block;vertical-align:middle;position:relative;background:#fff;transition:background .12s,border-color .12s}
+.ck.on{background:var(--primary-600);border-color:var(--primary-600)}
+.ck.on:after{content:"";position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.pn{font-weight:650;line-height:1.4}
+.pn i{font-style:normal;display:block;font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:2px}
+.acct{font-size:12px;color:var(--ink-2)}
+.acct i{font-style:normal;display:block;font-size:10.5px;color:var(--ink-3);margin-top:1px}
+.ptag{font-size:10.5px;font-weight:650;border-radius:5px;padding:3px 7px;white-space:nowrap}
+.ptag.live{color:var(--primary-700);background:var(--primary-50)}
+.ptag.goods{color:#7c5cc4;background:#f7f4fd}
+.st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:620;white-space:nowrap}
+.st i{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+.st.run{color:var(--success)}.st.run i{background:var(--success)}
+.st.watch{color:var(--warning)}.st.watch i{background:var(--warning)}
+.st.stop{color:var(--ink-3)}.st.stop i{background:var(--ink-3)}
+.sug{font-family:var(--num);font-weight:680;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sug i{font-style:normal;font-family:var(--mono);font-size:9px;color:var(--primary-600);background:var(--primary-50);border-radius:4px;padding:2px 5px;margin-left:6px;vertical-align:1px}
+.roi-in{width:80px;height:33px;border:1.5px solid var(--hair);border-radius:9px;font-family:var(--num);font-size:14px;font-weight:700;text-align:right;color:var(--ink);outline:0;font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s}
+.roi-in:focus{border-color:var(--primary-600);box-shadow:0 0 0 3px rgba(91,145,212,.15)}
+.roi-in.warn{border-color:var(--warning)}
+.calc-btn{height:28px;padding:0 10px;border:1px solid var(--hair);border-radius:8px;background:#fff;font-size:11.5px;font-weight:620;color:var(--primary-600);cursor:pointer;font-family:inherit;white-space:nowrap}
+.calc-btn:hover{border-color:#a3c6ed;background:var(--primary-50)}
+.hint{font-size:11px;color:var(--ink-3);line-height:1.5}
+.hint.warn{color:var(--warning)}
+.tbl-note{display:flex;gap:9px;margin-top:16px;padding:12px 14px;border-radius:11px;background:var(--primary-50);border:1px solid var(--primary-100);font-size:12.5px;line-height:1.65;color:var(--ink-2);max-width:920px}
+.tbl-note .o{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:linear-gradient(140deg,#7dade2,var(--primary-700));color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+
+/* ===== 单计划止损 chip + 弹窗 ===== */
+.sl-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;text-align:left;border:1px dashed var(--hair);border-radius:7px;background:transparent;font-size:11px;line-height:1.4;color:var(--ink-3);cursor:pointer;font-family:inherit;padding:4px 9px;transition:border-color .15s,color .15s;white-space:nowrap}
+.sl-chip:hover{border-color:#a3c6ed;color:var(--primary-600)}
+.sl-chip.set{border:0;padding:0;background:transparent;color:var(--ink-2);font-weight:500;white-space:normal}
+.sl-chip.set:hover{color:var(--primary-600)}
+.sl-chip.set:after{content:"✎";font-size:10px;color:var(--ink-3);margin-left:5px}
+.slm-ov{position:fixed;inset:0;background:rgba(15,23,42,.36);backdrop-filter:blur(3px);z-index:1500;display:none;align-items:center;justify-content:center;padding:24px}
+.slm-ov.on{display:flex}
+.slm{width:520px;max-width:94vw;background:#fff;border-radius:16px;box-shadow:0 32px 90px -20px rgba(15,23,42,.5);overflow:hidden;animation:calIn .25s cubic-bezier(.16,.84,.3,1)}
+.slm-head{display:flex;align-items:flex-start;justify-content:space-between;padding:17px 22px;border-bottom:1px solid var(--hair)}
+.slm-head h3{font-size:14.5px;font-weight:730}
+.slm-head .sub{font-size:11.5px;color:var(--ink-3);margin-top:4px}
+.slm-head .sub b{font-family:var(--mono);font-weight:500}
+.slm-body{padding:18px 22px}
+.slm-ref{display:flex;gap:0;margin-bottom:16px}
+.slm-ref .f{flex:1;padding:0 16px;border-left:1px solid var(--hair)}
+.slm-ref .f:first-child{padding-left:0;border-left:0}
+.slm-ref b{display:block;font-family:var(--num);font-size:18px;font-weight:760;font-variant-numeric:tabular-nums}
+.slm-ref span{display:block;font-size:10px;color:var(--ink-3);margin-top:3px}
+.slm-k{font-size:12px;font-weight:680;color:var(--ink-2);margin:14px 0 9px}
+.win-tabs{display:flex;gap:5px;flex-wrap:wrap}
+.win-tabs button{height:28px;border:1px solid var(--hair);border-radius:8px;background:#fff;padding:0 11px;font-size:11.5px;font-weight:620;color:var(--ink-2);cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s,color .15s}
+.win-tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.win-tabs .custom{display:inline-flex;align-items:center;gap:5px}
+.win-tabs .custom input{width:48px;height:28px;border:1px solid var(--hair);border-radius:8px;text-align:right;font-family:var(--num);font-size:12px;font-weight:650;outline:0}
+.cond{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);padding:10px 12px;border:1px solid var(--hair);border-radius:10px;margin-bottom:8px;background:#fafbfd}
+.cond input{width:80px;height:30px;border:1px solid var(--hair);border-radius:8px;text-align:right;font-family:var(--num);font-size:12.5px;font-weight:650;outline:0;background:#fff}
+.cond input:focus{border-color:var(--primary-500)}
+.cond .op{font-family:var(--mono);font-size:12px;color:var(--ink-3)}
+.slm-act{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2)}
+.slm-act select{height:32px;border:1px solid var(--hair);border-radius:8px;font-family:inherit;font-size:12.5px;padding:0 8px;outline:0;background:#fff;cursor:pointer}
+.slm-say{display:flex;gap:9px;margin-top:14px;padding:11px 13px;border-radius:10px;background:var(--primary-50);border:1px solid var(--primary-100);font-size:12px;line-height:1.6;color:var(--ink-2)}
+.slm-say .o{flex:0 0 auto;width:20px;height:20px;border-radius:6px;background:linear-gradient(140deg,#7dade2,var(--primary-700));color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center}
+.slm-foot{display:flex;gap:10px;padding:0 22px 20px}
+.slm-foot .sp{flex:1}
+.slm-foot .clear{font-size:12px;color:var(--ink-3);background:none;border:0;cursor:pointer;font-family:inherit}
+.slm-foot .clear:hover{color:var(--danger)}
+
+/* ===== 盈亏计算器弹窗 ===== */
+.cal-ov{position:fixed;inset:0;background:rgba(15,23,42,.36);backdrop-filter:blur(3px);z-index:1500;display:none;align-items:center;justify-content:center;padding:24px}
+.cal-ov.on{display:flex}
+.cal{width:440px;max-width:94vw;background:#fff;border-radius:16px;box-shadow:0 32px 90px -20px rgba(15,23,42,.5);overflow:hidden;animation:calIn .25s cubic-bezier(.16,.84,.3,1)}
+@keyframes calIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.cal-head{display:flex;align-items:center;justify-content:space-between;padding:17px 22px;border-bottom:1px solid var(--hair)}
+.cal-head h3{font-size:14.5px;font-weight:730}
+.cal-head h3 span{font-size:11.5px;color:var(--ink-3);font-weight:400;margin-left:8px}
+.cal-x{width:28px;height:28px;border:0;background:transparent;border-radius:8px;color:var(--ink-3);cursor:pointer;display:grid;place-items:center}
+.cal-x:hover{background:var(--hair-2);color:var(--ink)}
+.cal-body{padding:18px 22px}
+.cal-row{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;margin-bottom:12px}
+.cal-row label{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.cal-row input{height:36px;text-align:right;border:1px solid var(--hair);border-radius:9px;font-family:var(--num);font-size:14px;font-weight:650;padding:0 12px;outline:0;font-variant-numeric:tabular-nums}
+.cal-row input:focus{border-color:var(--primary-600);box-shadow:0 0 0 3px rgba(91,145,212,.15)}
+.cal-out{margin-top:16px;border-radius:12px;background:linear-gradient(180deg,var(--primary-50),#fff);border:1px solid var(--primary-100);padding:15px 17px;display:flex;align-items:baseline;gap:12px}
+.cal-out .lbl{font-size:12px;color:var(--ink-2);font-weight:640}
+.cal-out b{font-family:var(--num);font-size:30px;font-weight:780;color:var(--primary-700);font-variant-numeric:tabular-nums;margin-left:auto}
+.cal-note{font-size:11px;color:var(--ink-3);margin-top:10px;line-height:1.6}
+.cal-foot{display:flex;gap:10px;padding:0 22px 20px}
+
+/* ===== 保存条 ===== */
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:100;display:flex;justify-content:center;pointer-events:none;opacity:0;transform:translateY(12px);transition:opacity .25s,transform .25s}
+.savebar.on{opacity:1;transform:none}
+.sb-in{pointer-events:auto;display:flex;align-items:center;gap:16px;margin-bottom:14px;padding:10px 12px 10px 20px;border-radius:14px;background:rgba(255,255,255,.85);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.95);box-shadow:0 12px 36px -12px rgba(30,54,100,.35)}
+.sb-in .tx{font-size:12.5px;color:var(--ink-2)}
+
+@media(max-width:980px){.page{padding:84px 18px 40px}.modes{grid-template-columns:1fr}.acc{grid-template-columns:1fr;gap:10px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="lede reveal d1">
+    <div>
+      <h1>告诉我规则，剩下交给我。</h1>
+      <p>托管范围、授权、盈亏线、止损规则——这是我所有动作的边界。你定规则，我守规则，随时可改、即刻生效。</p>
+    </div>
+    <button class="smart-btn" id="smartBtn"><span class="o">投</span>让我帮你配</button>
+  </header>
+
+  <!-- ===== ① 托管与授权 · 按账户 ===== -->
+  <section class="section reveal d2">
+    <div class="sec-head"><h2>托管与授权</h2><p>每个账户一套规则 · 显示哪些账户，跟随顶部作用域选择</p></div>
+
+    <div class="tbl-card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:22%">账户</th>
+          <th style="width:14%">负责优化师</th>
+          <th style="width:18%">托管覆盖</th>
+          <th style="width:10%">授权模式</th>
+          <th style="width:18%">自动纳入新计划</th>
+          <th style="width:10%"></th>
+        </tr>
+      </thead>
+      <tbody id="accRows">
+        <tr data-acc="a">
+          <td><div class="pn">千川A<i>直播间投放为主</i></div></td>
+          <td><div class="acct">优化师 A<i>ID 10072</i></div></td>
+          <td><span class="cov-tx"><b class="num">128</b>/142 · 未托管 <b class="num warn">4</b></span></td>
+          <td><span class="lv-chip l1">L1 确认</span></td>
+          <td><span class="yn on">直播间 ✓</span>　<span class="yn on">商品 ✓</span></td>
+          <td class="r"><span class="row-go">配置 ›</span></td>
+        </tr>
+        <tr data-acc="b">
+          <td><div class="pn">千川B<i>货架场为主</i></div></td>
+          <td><div class="acct">优化师 A<i>ID 10072</i></div></td>
+          <td><span class="cov-tx"><b class="num">186</b>/231 · 未托管 <b class="num warn">3</b></span></td>
+          <td><span class="lv-chip l1">L1 确认</span></td>
+          <td><span class="yn on">直播间 ✓</span>　<span class="yn on">商品 ✓</span></td>
+          <td class="r"><span class="row-go">配置 ›</span></td>
+        </tr>
+        <tr data-acc="c">
+          <td><div class="pn">千川C<i>测品账户</i></div></td>
+          <td><div class="acct">优化师 B<i>ID 10088</i></div></td>
+          <td><span class="cov-tx"><b class="num">27</b>/42</span></td>
+          <td><span class="lv-chip l2">L2 自动</span></td>
+          <td><span class="yn">直播间 —</span>　<span class="yn on">商品 ✓</span></td>
+          <td class="r"><span class="row-go">配置 ›</span></td>
+        </tr>
+        <tr data-acc="d">
+          <td><div class="pn">千川D<i>达人合作账户</i></div></td>
+          <td><div class="acct">优化师 B<i>ID 10088</i></div></td>
+          <td><span class="cov-tx"><b class="num">54</b>/61</span></td>
+          <td><span class="lv-chip l2">L2 自动</span></td>
+          <td><span class="yn on">直播间 ✓</span>　<span class="yn">商品 —</span></td>
+          <td class="r"><span class="row-go">配置 ›</span></td>
+        </tr>
+        <tr data-acc="e">
+          <td><div class="pn">千川E<i>大促备用账户</i></div></td>
+          <td><div class="acct">优化师 A<i>ID 10072</i></div></td>
+          <td><span class="cov-tx"><b class="num">0</b>/18 · <span style="color:var(--ink-3)">未启用托管</span></span></td>
+          <td><span class="lv-chip off">未托管</span></td>
+          <td><span class="yn">直播间 —</span>　<span class="yn">商品 —</span></td>
+          <td class="r"><span class="row-go">配置 ›</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="pager">
+      <span class="info">作用域已选 <b>5</b> 个账户 · 第 <b>1–5</b> 个</span>
+      <span class="sp"></span>
+      <span class="hint">点任意一行进入该账户的完整配置</span>
+      <div class="pg-btns" id="accPg"><button disabled>‹</button><button class="on">1</button><button disabled>›</button></div>
+    </div>
+    <div class="scope-note">⚠ <span><b>7 条高消耗计划不在我的托管范围</b>（千川A 4 条 / 千川B 3 条，约占 18% 消耗），夜间无人盯。在「智能优化」里有这条建议，或进对应账户配置加进来。</span></div>
+  </section>
+
+  <!-- ===== ③ 盈亏线与止损（按计划） ===== -->
+  <section class="section reveal d4">
+    <div class="sec-head"><h2>盈亏线与止损</h2><p>按计划设置：保本底线（必填）+ 止损规则（可选，不填则按我的默认策略）</p></div>
+    <div class="batchbar">
+      <span class="sel-info">已选 <b id="selN">0</b> 条</span>
+      <button class="tbtn" id="useSug">采用我的建议值</button>
+      <div class="batch-set">盈亏线批量设为 <input type="number" step="0.1" min="1" max="9" id="batchVal" placeholder="2.8"><button class="tbtn" id="batchApply">应用</button></div>
+      <button class="tbtn" id="batchSl">批量设置止损规则</button>
+      <span class="sp"></span>
+      <span class="hint">勾选后批量操作，或逐行设置</span>
+    </div>
+    <div class="tbl-card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:4%"><span class="ck" id="ckAll"></span></th>
+          <th style="width:33%">计划</th>
+          <th style="width:10%">状态</th>
+          <th class="r" style="width:12%">当前实际投产比</th>
+          <th style="width:17%">盈亏线（必填）</th>
+          <th style="width:24%">智能止损</th>
+        </tr>
+      </thead>
+      <tbody id="roiRows">
+        <tr>
+          <td><span class="ck"></span></td>
+          <td><div class="pn">夏季连衣裙-直播间引流 <span class="ptag live">直播间</span><i>#41203 · 千川A · 优化师 A</i></div></td>
+          <td><span class="st watch"><i></i>观察中</span></td>
+          <td class="r"><span class="cur-roi warn">2.7</span></td>
+          <td>
+            <div class="roi-cell"><input class="roi-in" type="number" step="0.1" min="1" max="9" value="2.6" data-sug="2.6"><button class="calc-ic" data-plan="夏季连衣裙-直播间引流" title="盈亏计算器"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="15.01"/></svg></button></div>
+            <div class="roi-sub">我的建议 2.6 · 按毛利测算</div>
+            <div class="roi-hint"></div>
+          </td>
+          <td><button class="sl-chip set" data-plan="夏季连衣裙-直播间引流" data-id="#41203">近7天消耗≥¥500 且 投产比≤2.6 → 暂停</button></td>
+        </tr>
+        <tr>
+          <td><span class="ck"></span></td>
+          <td><div class="pn">凉感四件套-货架场 <span class="ptag goods">商品</span><i>#43890 · 千川B · 优化师 A</i></div></td>
+          <td><span class="st run"><i></i>投放中</span></td>
+          <td class="r"><span class="cur-roi ok">4.5</span></td>
+          <td>
+            <div class="roi-cell"><input class="roi-in" type="number" step="0.1" min="1" max="9" value="2.8" data-sug="2.8"><button class="calc-ic" data-plan="凉感四件套-货架场" title="盈亏计算器"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="15.01"/></svg></button></div>
+            <div class="roi-sub">我的建议 2.8 · 按毛利测算</div>
+            <div class="roi-hint"></div>
+          </td>
+          <td><button class="sl-chip" data-plan="凉感四件套-货架场" data-id="#43890">+ 止损规则</button></td>
+        </tr>
+        <tr>
+          <td><span class="ck"></span></td>
+          <td><div class="pn">直播大场预热-引流 <span class="ptag live">直播间</span><i>#41866 · 千川A · 优化师 A</i></div></td>
+          <td><span class="st run"><i></i>投放中</span></td>
+          <td class="r"><span class="cur-roi ok">3.6</span></td>
+          <td>
+            <div class="roi-cell"><input class="roi-in" type="number" step="0.1" min="1" max="9" value="2.4" data-sug="2.6"><button class="calc-ic" data-plan="直播大场预热-引流" title="盈亏计算器"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="15.01"/></svg></button></div>
+            <div class="roi-sub">我的建议 2.6 · 按毛利测算</div>
+            <div class="roi-hint"></div>
+          </td>
+          <td><button class="sl-chip" data-plan="直播大场预热-引流" data-id="#41866">+ 止损规则</button></td>
+        </tr>
+        <tr>
+          <td><span class="ck"></span></td>
+          <td><div class="pn">防晒衣男款-货架场 <span class="ptag goods">商品</span><i>#44102 · 千川B · 优化师 A</i></div></td>
+          <td><span class="st run"><i></i>投放中</span></td>
+          <td class="r"><span class="cur-roi ok">3.9</span></td>
+          <td>
+            <div class="roi-cell"><input class="roi-in" type="number" step="0.1" min="1" max="9" value="2.8" data-sug="2.8"><button class="calc-ic" data-plan="防晒衣男款-货架场" title="盈亏计算器"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="15.01"/></svg></button></div>
+            <div class="roi-sub">我的建议 2.8 · 按毛利测算</div>
+            <div class="roi-hint"></div>
+          </td>
+          <td><button class="sl-chip set" data-plan="防晒衣男款-货架场" data-id="#44102">近24h消耗≥¥300 且 投产比≤2.8 → 暂停</button></td>
+        </tr>
+        <tr>
+          <td><span class="ck"></span></td>
+          <td><div class="pn">夏凉被清仓-直播间 <span class="ptag live">直播间</span><i>#42108 · 千川A · 优化师 A</i></div></td>
+          <td><span class="st stop"><i></i>已暂停</span></td>
+          <td class="r"><span class="cur-roi bad">1.9</span></td>
+          <td>
+            <div class="roi-cell"><input class="roi-in" type="number" step="0.1" min="1" max="9" value="2.6" data-sug="2.6"><button class="calc-ic" data-plan="夏凉被清仓-直播间" title="盈亏计算器"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="15.01"/></svg></button></div>
+            <div class="roi-sub">我的建议 2.6 · 按毛利测算</div>
+            <div class="roi-hint"></div>
+          </td>
+          <td><button class="sl-chip set" data-plan="夏凉被清仓-直播间" data-id="#42108">近7天消耗≥¥800 且 投产比≤2.6 → 暂停</button></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="pager">
+      <span class="info">第 <b>1–20</b> 条 · 共 <b>142</b> 条</span>
+      <span class="sp"></span>
+      <div class="pg-size">每页 <select><option>20</option><option>50</option><option>100</option></select> 条</div>
+      <div class="pg-btns" id="roiPg">
+        <button disabled>‹</button><button class="on">1</button><button>2</button><button>3</button><span class="ell">…</span><button>8</button><button>›</button>
+      </div>
+    </div>
+    <div class="tbl-note">
+      <span class="o">投</span>
+      <span>盈亏线低于我的测算太多时，"在亏"的判断会失真——我会在你输入时提醒，但<b>最终以你设的为准</b>。止损规则不填的计划，我按账户默认策略兜底（持续亏损 40 分钟提示/处理）。</span>
+    </div>
+  </section>
+</div>
+
+<!-- ===== 盈亏计算器 ===== -->
+<div class="cal-ov" id="calOv">
+  <div class="cal" role="dialog" aria-modal="true" aria-label="盈亏计算器">
+    <div class="cal-head">
+      <h3>盈亏计算器<span id="calPlan"></span></h3>
+      <button class="cal-x" id="calClose" aria-label="关闭"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="cal-body">
+      <div class="cal-row"><label>商品售价 ¥</label><input type="number" id="cPrice" value="139" min="0"></div>
+      <div class="cal-row"><label>商品成本 ¥</label><input type="number" id="cCost" value="62" min="0"></div>
+      <div class="cal-row"><label>运费+包材 ¥</label><input type="number" id="cShip" value="6" min="0"></div>
+      <div class="cal-row"><label>平台佣金 %</label><input type="number" id="cFee" value="5" min="0" max="50"></div>
+      <div class="cal-row"><label>退货率 %</label><input type="number" id="cRet" value="12" min="0" max="80"></div>
+      <div class="cal-out"><span class="lbl">保本投产比（盈亏线）</span><b id="cOut">2.6</b></div>
+      <div class="cal-note">公式：售价 ÷ [（售价 −成本 −运费 −售价×佣金率）×（1 −退货率）]。这是不赚不亏的临界线，实际投产比低于它即在亏。</div>
+    </div>
+    <div class="cal-foot">
+      <button class="btn pri" id="calFill">填入这条计划</button>
+      <button class="btn ghost" id="calCancel">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 单计划智能止损弹窗 ===== -->
+<div class="slm-ov" id="slmOv">
+  <div class="slm" role="dialog" aria-modal="true" aria-label="智能止损">
+    <div class="slm-head">
+      <div>
+        <h3>智能止损</h3>
+        <div class="sub" id="slmPlan"></div>
+      </div>
+      <button class="cal-x" id="slmClose" aria-label="关闭"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="slm-body">
+      <div class="slm-ref">
+        <div class="f"><b id="slmCost">¥18,750</b><span id="slmCostL">近 7 天已消耗</span></div>
+        <div class="f"><b id="slmRoi">2.7</b><span id="slmRoiL">近 7 天实际投产比</span></div>
+        <div class="f"><b>2.6</b><span>你设的盈亏线</span></div>
+      </div>
+      <div class="slm-k">数据滚动周期 · 判定参考多长时间的数据</div>
+      <div class="win-tabs" id="slmWin">
+        <button>近 24 小时</button><button class="on">近 7 天</button><button>近 30 天</button><button>近 45 天</button>
+        <span class="custom">自定义 近 <input type="number" min="1" max="60" placeholder="45"> 天</span>
+      </div>
+      <div class="slm-k">符合以下所有条件时</div>
+      <div class="cond">周期内累计消耗 <span class="op">≥</span> ¥ <input type="number" id="slmC1" value="500" min="0"> 且 实际投产比 <span class="op">≤</span> <input type="number" id="slmC2" value="2.6" step="0.1" min="0"></div>
+      <div class="slm-k">执行动作</div>
+      <div class="slm-act">
+        <select id="slmDo"><option>自动暂停计划</option><option>只提醒我，不动</option><option>收紧出价并提醒</option></select>
+        <span style="font-size:11.5px;color:var(--ink-3)">动作后进入 24h 观察窗口，误杀可恢复</span>
+      </div>
+      <div class="slm-say"><span class="o">投</span><span id="slmSayTx">投产比阈值和你的盈亏线一致——跌破保本线即出手，这是最常用的设法。</span></div>
+    </div>
+    <div class="slm-foot">
+      <button class="btn pri" id="slmSave">保存规则</button>
+      <button class="btn ghost" id="slmCancel">取消</button>
+      <span class="sp"></span>
+      <button class="clear" id="slmClear">清除规则，回到默认策略</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 账户配置抽屉 ===== -->
+<div class="acc-scrim" id="accScrim"></div>
+<aside class="acc-file" id="accFile" aria-hidden="true">
+  <div class="af-head">
+    <div>
+      <h3 id="afName">千川A</h3>
+      <div class="sub" id="afSub">直播间投放为主 · 巨量千川</div>
+    </div>
+    <span class="sp"></span>
+    <button class="cal-x" id="afClose" aria-label="关闭"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="af-body">
+    <div class="optr"><span class="av" id="afAv">王</span><span class="oi"><b id="afOp">优化师 A</b><i id="afOpId">负责优化师 · ID 10072 · 在管理后台分配</i></span></div>
+
+    <div class="ap-k">托管范围</div>
+    <div class="ap-cover">
+      <div class="cnt" id="afCover">已托管 <b>128</b>/142 条计划 · 高消耗未托管 <b class="warn">4</b></div>
+      <button class="btn ghost sm" id="mngBtn">管理计划范围</button>
+    </div>
+    <div class="cap"><div class="tt">新建直播间计划自动加入<span>仅影响今后新建的计划</span></div><div class="toggle on" role="switch" aria-checked="true" id="afTgLive"></div></div>
+    <div class="cap"><div class="tt">新建商品计划自动加入<span>仅影响今后新建的计划</span></div><div class="toggle on" role="switch" aria-checked="true" id="afTgGoods"></div></div>
+
+    <div class="ap-k">授权模式</div>
+    <div class="modes slim" id="modes">
+      <div class="mode on" data-m="l1">
+        <span class="radio"></span>
+        <h3><span class="lv">L1</span>建议后执行</h3>
+        <p>发现和建议进「智能优化」，<b>你拍板我才动</b></p>
+      </div>
+      <div class="mode" data-m="l2">
+        <span class="radio"></span>
+        <h3><span class="lv">L2</span>自动执行</h3>
+        <p>授权范围内<b>直接执行并记录</b>，可核验可撤回</p>
+      </div>
+    </div>
+
+    <div class="ap-k">此账户内我可以做的动作</div>
+    <div class="caps">
+      <div class="cap"><div class="tt">调目标投产比<span>出价/消耗节奏的旋钮</span></div><div class="toggle on" role="switch" aria-checked="true"></div></div>
+      <div class="cap"><div class="tt">调整日预算<span>单步加幅不超过 30%</span></div><div class="toggle on" role="switch" aria-checked="true"></div></div>
+      <div class="cap"><div class="tt">暂停计划<span>持续亏损时止住消耗</span></div><div class="toggle on" role="switch" aria-checked="true"></div></div>
+      <div class="cap"><div class="tt">素材追投<span>把量切给被验证的素材</span></div><div class="toggle" role="switch" aria-checked="false"></div></div>
+      <div class="cap"><div class="tt">删除素材<span>不可恢复——默认需要你拍板</span></div><div class="toggle" role="switch" aria-checked="false"></div></div>
+      <div class="cap night"><div class="tt">夜间紧急止损（18:00–09:00）<span>夜间持续亏损我可直接暂停——建议开启</span></div><div class="toggle on" role="switch" aria-checked="true"></div></div>
+    </div>
+  </div>
+  <div class="af-foot">
+    <button class="btn pri" id="afSave">保存此账户配置</button>
+    <button class="btn ghost" id="copyCfg">复制到其他账户</button>
+    <span class="sp"></span>
+  </div>
+</aside>
+
+<!-- ===== 让我帮你配 · 配置建议 diff ===== -->
+<div class="sm-ov" id="smOv">
+  <div class="sm" role="dialog" aria-modal="true" aria-label="配置建议">
+    <div class="sm-head">
+      <span class="o">投</span>
+      <div>
+        <h3>我看了你的账户和计划，建议做这 4 处调整</h3>
+        <p>都是按你的实际数据给的——勾掉不想要的，其余我来生效。</p>
+      </div>
+      <span class="sp"></span>
+      <button class="cal-x" id="smClose" aria-label="关闭"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sm-body" id="smBody">
+      <div class="diff"><span class="ck on"></span><div><strong>把 7 条高消耗未托管计划加入托管<span class="chg">千川A 4 条 · 千川B 3 条</span></strong><div class="why">它们占约 18% 消耗，夜间没人盯——昨晚出现过 2 次投产比异常波动无人处理。</div></div></div>
+      <div class="diff"><span class="ck on"></span><div><strong>千川E 启用托管，L1 起步<span class="chg">未托管 → L1 确认</span></strong><div class="why">18 条计划完全在我的视野外。大促备用户先用 L1 磨合，跑顺再考虑放权。</div></div></div>
+      <div class="diff"><span class="ck on"></span><div><strong>为 12 条盈亏线空缺的计划填入测算值<span class="chg">按毛利测算</span></strong><div class="why">没有盈亏线我无法判断在亏。测算基于商品售价/成本/佣金/退货率，填入后你可逐条改。</div></div></div>
+      <div class="diff"><span class="ck on"></span><div><strong>千川A / B 开启「素材追投」权限<span class="chg">关 → 开</span></strong><div class="why">最近 30 天你采纳率最高的就是素材类建议（9/11 条）——这步授权能省掉最多的来回确认。</div></div></div>
+    </div>
+    <div class="sm-foot">
+      <button class="btn pri" id="smApply">采纳 4 项并生效</button>
+      <button class="btn ghost" id="smCancel">先不用</button>
+      <span class="hint">采纳后所有改动可在执行日志回看、可撤回</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 管理计划范围弹窗 ===== -->
+<div class="cal-ov" id="mngOv">
+  <div class="cal" style="width:560px" role="dialog" aria-modal="true" aria-label="管理计划范围">
+    <div class="cal-head">
+      <h3>管理计划范围<span id="mngAcc">千川A</span></h3>
+      <button class="cal-x" id="mngClose" aria-label="关闭"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="cal-body" style="padding-top:14px">
+      <div class="mng-bar">
+        <div class="search" style="flex:1"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input type="text" placeholder="搜索计划名 / ID" style="width:100%"></div>
+        <button class="tbtn" id="mngHigh">只看高消耗未托管</button>
+      </div>
+      <div class="mng-list" id="mngList">
+        <div class="mng-row hot"><span class="ck"></span><div class="pn">大促主推-直播间引流<i>#40771 · 日均 ¥4,200</i></div><span class="ptag live">直播间</span><span class="mng-hint">高消耗 · 未托管</span></div>
+        <div class="mng-row hot"><span class="ck"></span><div class="pn">爆款连衣裙B款-直播间<i>#41099 · 日均 ¥3,800</i></div><span class="ptag live">直播间</span><span class="mng-hint">高消耗 · 未托管</span></div>
+        <div class="mng-row hot"><span class="ck"></span><div class="pn">直播大场冲刺-引流<i>#41950 · 日均 ¥3,100</i></div><span class="ptag live">直播间</span><span class="mng-hint">高消耗 · 未托管</span></div>
+        <div class="mng-row hot"><span class="ck"></span><div class="pn">夏装清仓二批-直播间<i>#42390 · 日均 ¥2,600</i></div><span class="ptag live">直播间</span><span class="mng-hint">高消耗 · 未托管</span></div>
+        <div class="mng-row"><span class="ck on"></span><div class="pn">夏季连衣裙-直播间引流<i>#41203 · 日均 ¥2,700</i></div><span class="ptag live">直播间</span><span class="mng-hint on">托管中</span></div>
+        <div class="mng-row"><span class="ck on"></span><div class="pn">直播大场预热-引流<i>#41866 · 日均 ¥1,400</i></div><span class="ptag live">直播间</span><span class="mng-hint on">托管中</span></div>
+        <div class="mng-row"><span class="ck on"></span><div class="pn">夏凉被清仓-直播间<i>#42108 · 日均 ¥880</i></div><span class="ptag live">直播间</span><span class="mng-hint on">托管中</span></div>
+        <div class="mng-row more">… 还有 135 条，真实环境分页加载</div>
+      </div>
+    </div>
+    <div class="cal-foot" style="align-items:center">
+      <button class="btn pri" id="mngSave">保存范围</button>
+      <button class="btn ghost" id="mngCancel">取消</button>
+      <span style="margin-left:auto;font-size:11.5px;color:var(--ink-3)">已选托管 <b class="num" id="mngN" style="color:var(--primary-600)">128</b>/142</span>
+    </div>
+  </div>
+</div>
+
+<div class="savebar" id="savebar">
+  <div class="sb-in">
+    <span class="tx" id="sbTx">你改了 <b id="sbN" class="num" style="color:var(--primary-600)">0</b> 条计划的盈亏线，还没生效</span>
+    <button class="btn ghost" id="sbReset">还原改动</button>
+    <button class="btn pri" id="sbSave">保存并生效</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  /* ===== 账户配置抽屉 ===== */
+  var ACC = {
+    a:{name:'千川A', sub:'直播间投放为主 · 巨量千川', op:'优化师 A', id:'10072', av:'王', cover:'已托管 <b>128</b>/142 条计划 · 高消耗未托管 <b class="warn">4</b>', mode:'l1', live:1, goods:1},
+    b:{name:'千川B', sub:'货架场为主 · 巨量千川', op:'优化师 A', id:'10072', av:'王', cover:'已托管 <b>186</b>/231 条计划 · 高消耗未托管 <b class="warn">3</b>', mode:'l1', live:1, goods:1},
+    c:{name:'千川C', sub:'测品账户 · 巨量千川', op:'优化师 B', id:'10088', av:'李', cover:'已托管 <b>27</b>/42 条计划', mode:'l2', live:0, goods:1},
+    d:{name:'千川D', sub:'达人合作账户 · 巨量千川', op:'优化师 B', id:'10088', av:'李', cover:'已托管 <b>54</b>/61 条计划', mode:'l2', live:1, goods:0},
+    e:{name:'千川E', sub:'大促备用账户 · 巨量千川', op:'优化师 A', id:'10072', av:'王', cover:'未启用托管 · 共 18 条计划', mode:'l1', live:0, goods:0}
+  };
+  var accFile = document.getElementById('accFile'), accScrim = document.getElementById('accScrim');
+  function openAcc(key){
+    var a = ACC[key]; if(!a) return;
+    document.getElementById('afName').textContent = a.name;
+    document.getElementById('afSub').textContent = a.sub;
+    document.getElementById('afAv').textContent = a.av;
+    document.getElementById('afOp').textContent = a.op;
+    document.getElementById('afOpId').textContent = '负责优化师 · ID ' + a.id + ' · 在管理后台分配';
+    document.getElementById('afCover').innerHTML = a.cover;
+    document.getElementById('afTgLive').classList.toggle('on', !!a.live);
+    document.getElementById('afTgGoods').classList.toggle('on', !!a.goods);
+    document.querySelectorAll('#modes .mode').forEach(function(m){
+      m.classList.toggle('on', m.getAttribute('data-m') === a.mode);
+    });
+    accFile.classList.add('on'); accScrim.classList.add('on');
+  }
+  function closeAcc(){ accFile.classList.remove('on'); accScrim.classList.remove('on'); }
+  document.querySelectorAll('#accRows tr').forEach(function(tr){
+    tr.addEventListener('click', function(){ openAcc(tr.getAttribute('data-acc')); });
+  });
+  document.getElementById('afClose').addEventListener('click', closeAcc);
+  accScrim.addEventListener('click', closeAcc);
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeAcc(); });
+  document.getElementById('afSave').addEventListener('click', function(){
+    var old = this.textContent;
+    this.textContent = '✓ 已保存';
+    var self = this;
+    setTimeout(function(){ self.textContent = old; closeAcc(); }, 900);
+  });
+  document.getElementById('copyCfg').addEventListener('click', function(){
+    var old = this.textContent;
+    this.textContent = '✓ 已复制到其余 4 个账户';
+    var self = this;
+    setTimeout(function(){ self.textContent = old; }, 2200);
+  });
+
+  /* 授权模式 */
+  document.getElementById('modes').addEventListener('click', function(e){
+    var m = e.target.closest('.mode'); if(!m) return;
+    this.querySelectorAll('.mode').forEach(function(x){ x.classList.remove('on'); });
+    m.classList.add('on');
+  });
+  /* 开关 */
+  document.querySelectorAll('.toggle').forEach(function(t){
+    t.addEventListener('click', function(){
+      t.classList.toggle('on');
+      t.setAttribute('aria-checked', t.classList.contains('on'));
+    });
+  });
+
+  /* ===== 盈亏线：单行输入点评 ===== */
+  function reviewInput(inp){
+    var v = parseFloat(inp.value), sug = parseFloat(inp.getAttribute('data-sug'));
+    var hint = inp.closest('td').querySelector('.roi-hint');
+    inp.classList.remove('warn'); hint.classList.remove('warn');
+    if(isNaN(v)){ hint.textContent = '必填'; hint.classList.add('warn'); inp.classList.add('warn'); return; }
+    var d = +(v - sug).toFixed(1);
+    if(d === 0){ hint.textContent = ''; }
+    else if(d > 0){ hint.textContent = '比测算高 ' + d + '，更保守'; }
+    else if(d >= -0.3){ hint.textContent = '比测算低 ' + Math.abs(d) + '，允许'; }
+    else { hint.textContent = '低于测算 ' + Math.abs(d) + '：大概率真亏，先核成本'; hint.classList.add('warn'); inp.classList.add('warn'); }
+  }
+  document.querySelectorAll('.roi-in').forEach(function(inp){
+    inp.addEventListener('input', function(){ reviewInput(inp); });
+  });
+
+  /* ===== 复选 + 批量 ===== */
+  var rowCks = Array.prototype.slice.call(document.querySelectorAll('#roiRows .ck'));
+  var ckAll = document.getElementById('ckAll');
+  function syncSel(){
+    var n = rowCks.filter(function(c){ return c.classList.contains('on'); }).length;
+    document.getElementById('selN').textContent = n;
+    ckAll.classList.toggle('on', n === rowCks.length && n > 0);
+  }
+  rowCks.forEach(function(c){ c.addEventListener('click', function(){ c.classList.toggle('on'); syncSel(); }); });
+  ckAll.addEventListener('click', function(){
+    var allOn = rowCks.every(function(c){ return c.classList.contains('on'); });
+    rowCks.forEach(function(c){ c.classList.toggle('on', !allOn); });
+    syncSel();
+  });
+  function selectedRows(){
+    return rowCks.filter(function(c){ return c.classList.contains('on'); }).map(function(c){ return c.closest('tr'); });
+  }
+  document.getElementById('useSug').addEventListener('click', function(){
+    var rows = selectedRows();
+    (rows.length ? rows : Array.prototype.slice.call(document.querySelectorAll('#roiRows tr'))).forEach(function(tr){
+      var inp = tr.querySelector('.roi-in');
+      inp.value = inp.getAttribute('data-sug');
+      reviewInput(inp);
+    });
+  });
+  document.getElementById('batchApply').addEventListener('click', function(){
+    var v = document.getElementById('batchVal').value;
+    if(!v) return;
+    var rows = selectedRows();
+    if(!rows.length){ document.getElementById('batchVal').focus(); return; }
+    rows.forEach(function(tr){
+      var inp = tr.querySelector('.roi-in');
+      inp.value = v;
+      reviewInput(inp);
+    });
+  });
+
+  /* ===== 盈亏计算器 ===== */
+  var calOv = document.getElementById('calOv'), curInput = null;
+  function calc(){
+    var p = +document.getElementById('cPrice').value || 0;
+    var c = +document.getElementById('cCost').value || 0;
+    var s = +document.getElementById('cShip').value || 0;
+    var fee = (+document.getElementById('cFee').value || 0)/100;
+    var ret = (+document.getElementById('cRet').value || 0)/100;
+    var margin = (p - c - s - p*fee) * (1 - ret);
+    var out = document.getElementById('cOut');
+    if(p <= 0 || margin <= 0){ out.textContent = '—'; out.style.color = 'var(--danger)'; return null; }
+    var roi = p / margin;
+    out.textContent = roi.toFixed(1);
+    out.style.color = '';
+    return roi;
+  }
+  ['cPrice','cCost','cShip','cFee','cRet'].forEach(function(id){
+    document.getElementById(id).addEventListener('input', calc);
+  });
+  document.querySelectorAll('.calc-ic').forEach(function(b){
+    b.addEventListener('click', function(){
+      curInput = b.closest('tr').querySelector('.roi-in');
+      document.getElementById('calPlan').textContent = b.getAttribute('data-plan');
+      calc();
+      calOv.classList.add('on');
+    });
+  });
+  function closeCal(){ calOv.classList.remove('on'); }
+  document.getElementById('calClose').addEventListener('click', closeCal);
+  document.getElementById('calCancel').addEventListener('click', closeCal);
+  calOv.addEventListener('click', function(e){ if(e.target === calOv) closeCal(); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeCal(); });
+  document.getElementById('calFill').addEventListener('click', function(){
+    var roi = calc();
+    if(roi && curInput){
+      curInput.value = roi.toFixed(1);
+      reviewInput(curInput);
+    }
+    closeCal();
+  });
+
+  /* ===== 单计划止损弹窗 ===== */
+  var slmOv = document.getElementById('slmOv'), curChip = null;
+  document.querySelectorAll('.sl-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      curChip = chip;
+      document.getElementById('slmPlan').innerHTML = chip.getAttribute('data-plan') + ' <b>' + chip.getAttribute('data-id') + '</b>';
+      slmOv.classList.add('on');
+    });
+  });
+  function closeSlm(){ slmOv.classList.remove('on'); }
+  document.getElementById('slmClose').addEventListener('click', closeSlm);
+  document.getElementById('slmCancel').addEventListener('click', closeSlm);
+  slmOv.addEventListener('click', function(e){ if(e.target === slmOv) closeSlm(); });
+  document.getElementById('slmWin').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    var lbl = b.textContent;
+    document.getElementById('slmCostL').textContent = lbl + ' 已消耗';
+    document.getElementById('slmRoiL').textContent = lbl + ' 实际投产比';
+  });
+  /* agent 点评止损阈值 */
+  function slmReview(){
+    var roi = parseFloat(document.getElementById('slmC2').value);
+    var say = document.getElementById('slmSayTx');
+    if(isNaN(roi)){ say.textContent = '填好阈值，我来评估。'; return; }
+    if(Math.abs(roi - 2.6) < 0.05) say.textContent = '投产比阈值和你的盈亏线一致——跌破保本线即出手，这是最常用的设法。';
+    else if(roi < 2.6) say.textContent = '阈值 ' + roi.toFixed(1) + ' 低于盈亏线 2.6：触发时已经亏了一段，止损会偏晚——确认是有意给它波动空间。';
+    else say.textContent = '阈值 ' + roi.toFixed(1) + ' 高于盈亏线 2.6：还没亏就会触发，更激进——适合现金流紧、容错低的时期。';
+  }
+  document.getElementById('slmC2').addEventListener('input', slmReview);
+  document.getElementById('slmSave').addEventListener('click', function(){
+    if(curChip){
+      var win = document.querySelector('#slmWin button.on');
+      var c1 = document.getElementById('slmC1').value, c2 = document.getElementById('slmC2').value;
+      var act = document.getElementById('slmDo').value === '只提醒我，不动' ? '提醒' : (document.getElementById('slmDo').value === '收紧出价并提醒' ? '收紧出价' : '暂停');
+      curChip.textContent = (win ? win.textContent : '近7天') + '消耗≥¥' + c1 + ' 且 投产比≤' + c2 + ' → ' + act;
+      curChip.classList.add('set');
+    }
+    closeSlm();
+  });
+  document.getElementById('slmClear').addEventListener('click', function(){
+    if(curChip){ curChip.textContent = '+ 止损规则'; curChip.classList.remove('set'); }
+    closeSlm();
+  });
+  /* 批量设置止损：选中行套用弹窗（原型：直接打开弹窗，保存应用到所选） */
+  document.getElementById('batchSl').addEventListener('click', function(){
+    var rows = selectedRows();
+    if(!rows.length) return;
+    curChip = null;
+    document.getElementById('slmPlan').innerHTML = '批量设置 · 已选 <b>' + rows.length + '</b> 条计划';
+    slmOv.classList.add('on');
+    var save = document.getElementById('slmSave');
+    var handler = function(){
+      var win = document.querySelector('#slmWin button.on');
+      var c1 = document.getElementById('slmC1').value, c2 = document.getElementById('slmC2').value;
+      rows.forEach(function(tr){
+        var chip = tr.querySelector('.sl-chip');
+        chip.textContent = (win ? win.textContent : '近7天') + '消耗≥¥' + c1 + ' 且 投产比≤' + c2 + ' → 暂停';
+        chip.classList.add('set');
+      });
+      save.removeEventListener('click', handler);
+    };
+    save.addEventListener('click', handler);
+  });
+
+  /* ===== 让我帮你配 ===== */
+  var smOv = document.getElementById('smOv');
+  function smCount(){
+    return document.querySelectorAll('#smBody .ck.on').length;
+  }
+  document.getElementById('smartBtn').addEventListener('click', function(){ smOv.classList.add('on'); });
+  function closeSm(){ smOv.classList.remove('on'); }
+  document.getElementById('smClose').addEventListener('click', closeSm);
+  document.getElementById('smCancel').addEventListener('click', closeSm);
+  smOv.addEventListener('click', function(e){ if(e.target === smOv) closeSm(); });
+  document.querySelectorAll('#smBody .ck').forEach(function(c){
+    c.addEventListener('click', function(){
+      c.classList.toggle('on');
+      var n = smCount();
+      document.getElementById('smApply').textContent = n ? '采纳 ' + n + ' 项并生效' : '未选择任何项';
+      document.getElementById('smApply').disabled = !n;
+    });
+  });
+  document.getElementById('smApply').addEventListener('click', function(){
+    closeSm();
+    /* 演示：建议生效后页面状态联动 */
+    var note = document.querySelector('.scope-note');
+    if(note) note.innerHTML = '✓ <span style="color:var(--success)"><b>7 条高消耗计划已加入托管</b> · 千川E 已启用托管（L1）· 12 条盈亏线已按测算填入 · 千川A/B 素材追投已开启——全部记入执行日志，可撤回。</span>';
+    if(note){ note.style.background = 'var(--success-light)'; note.style.borderColor = 'rgba(34,166,122,.25)'; }
+    /* 表格行联动 */
+    var rowE = document.querySelector('#accRows tr[data-acc="e"]');
+    if(rowE){
+      rowE.querySelector('.lv-chip').className = 'lv-chip l1';
+      rowE.querySelector('.lv-chip').textContent = 'L1 确认';
+      rowE.querySelector('.cov-tx').innerHTML = '<b class="num">18</b>/18 · <span style="color:var(--success)">刚启用</span>';
+    }
+    ['a','b'].forEach(function(k){
+      var r = document.querySelector('#accRows tr[data-acc="' + k + '"] .cov-tx');
+      if(r) r.innerHTML = r.innerHTML.replace(/ · 未托管 <b class="num warn">\d+<\/b>/, ' · <span style="color:var(--success)">全覆盖</span>');
+    });
+  });
+
+  /* ===== 管理计划范围 ===== */
+  var mngOv = document.getElementById('mngOv');
+  document.getElementById('mngBtn').addEventListener('click', function(){
+    document.getElementById('mngAcc').textContent = document.getElementById('afName').textContent;
+    mngOv.classList.add('on');
+  });
+  function closeMng(){ mngOv.classList.remove('on'); }
+  document.getElementById('mngClose').addEventListener('click', closeMng);
+  document.getElementById('mngCancel').addEventListener('click', closeMng);
+  mngOv.addEventListener('click', function(e){ if(e.target === mngOv) closeMng(); });
+  function mngSync(){
+    var on = document.querySelectorAll('#mngList .ck.on').length;
+    document.getElementById('mngN').textContent = 124 + on; /* 演示：列表外还有 124 条已托管 */
+  }
+  document.querySelectorAll('#mngList .mng-row').forEach(function(row){
+    var c = row.querySelector('.ck'); if(!c) return;
+    row.addEventListener('click', function(){
+      c.classList.toggle('on');
+      var hint = row.querySelector('.mng-hint');
+      if(c.classList.contains('on')){ hint.textContent = '将托管'; hint.classList.add('on'); row.classList.remove('hot'); }
+      else { hint.textContent = '将移出托管'; hint.classList.remove('on'); }
+      mngSync();
+    });
+  });
+  document.getElementById('mngHigh').addEventListener('click', function(){
+    var only = this.classList.toggle('on');
+    this.style.color = only ? 'var(--primary-600)' : '';
+    this.style.borderColor = only ? '#a3c6ed' : '';
+    document.querySelectorAll('#mngList .mng-row').forEach(function(row){
+      if(row.classList.contains('more')) return;
+      row.style.display = (!only || row.classList.contains('hot') || row.querySelector('.mng-hint').textContent === '将托管') ? '' : 'none';
+    });
+  });
+  document.getElementById('mngSave').addEventListener('click', function(){
+    var n = document.getElementById('mngN').textContent;
+    closeMng();
+    document.getElementById('afCover').innerHTML = '已托管 <b>' + n + '</b>/142 条计划';
+  });
+
+  /* 计划表分页（原型切页态） */
+  document.getElementById('roiPg').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b || b.disabled || !/^\d+$/.test(b.textContent)) return;
+    this.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    var n = +b.textContent, from = (n-1)*20 + 1, to = Math.min(n*20, 142);
+    this.parentNode.querySelector('.info').innerHTML = '第 <b>' + from + '–' + to + '</b> 条 · 共 <b>142</b> 条';
+    this.children[0].disabled = (n === 1);
+  });
+
+  /* ===== 盈亏线提交条：有改动才出现，说清改了几条 ===== */
+  var inputs = Array.prototype.slice.call(document.querySelectorAll('.roi-in'));
+  inputs.forEach(function(inp){ inp.setAttribute('data-orig', inp.value); });
+  var savebar = document.getElementById('savebar');
+  function dirtyCount(){
+    return inputs.filter(function(inp){ return inp.value !== inp.getAttribute('data-orig'); }).length;
+  }
+  function syncBar(){
+    var n = dirtyCount();
+    document.getElementById('sbN').textContent = n;
+    savebar.classList.toggle('on', n > 0);
+  }
+  inputs.forEach(function(inp){ inp.addEventListener('input', syncBar); });
+  /* 批量操作也会改值，统一在操作后同步 */
+  ['useSug','batchApply'].forEach(function(id){
+    document.getElementById(id).addEventListener('click', function(){ setTimeout(syncBar, 0); });
+  });
+  document.getElementById('sbSave').addEventListener('click', function(){
+    var n = dirtyCount();
+    inputs.forEach(function(inp){ inp.setAttribute('data-orig', inp.value); });
+    var tx = document.getElementById('sbTx');
+    tx.innerHTML = '<span style="color:var(--success);font-weight:650">✓ ' + n + ' 条盈亏线已生效</span> · 我即刻按新底线值守，记入执行日志';
+    document.getElementById('sbReset').style.display = 'none';
+    document.getElementById('sbSave').style.display = 'none';
+    setTimeout(function(){
+      savebar.classList.remove('on');
+      setTimeout(function(){
+        tx.innerHTML = '你改了 <b id="sbN" class="num" style="color:var(--primary-600)">0</b> 条计划的盈亏线，还没生效';
+        document.getElementById('sbReset').style.display = '';
+        document.getElementById('sbSave').style.display = '';
+      }, 300);
+    }, 1800);
+  });
+  document.getElementById('sbReset').addEventListener('click', function(){
+    inputs.forEach(function(inp){
+      inp.value = inp.getAttribute('data-orig');
+      reviewInput(inp);
+    });
+    syncBar();
+  });
+})();
+</script>
+</body>
+</html>
