@@ -10,9 +10,7 @@
 
 **[▶ 打开可交互原型（六页完整可走）](https://saul-22.github.io/ai-pitcher-portfolio/prototype/toudehao_final.html)**
 
-无需安装、无后端依赖，纯静态 HTML。建议桌面浏览器（≥1280px 宽）打开。六个页面全部可点击：投放成果 → 智能优化 → 计划明细 → 目标设定 → 执行日志 → 案例归档，右上角可召出 Agent 抽屉。
-
-作品集站点入口：**https://saul-22.github.io/ai-pitcher-portfolio/**
+纯静态页面，建议桌面浏览器（≥1280px 宽）打开。作品集站点：https://saul-22.github.io/ai-pitcher-portfolio/
 
 ---
 
@@ -66,8 +64,6 @@ L1 或高风险 → 进「智能优化」收件箱等拍板（采纳 / 调整后
 | 执行日志 | 每一步可核验（动作前后对照） | [直接打开](https://saul-22.github.io/ai-pitcher-portfolio/prototype/zhixing_agent.html) |
 | 案例归档 | 沉淀与"已学习" | [直接打开](https://saul-22.github.io/ai-pitcher-portfolio/prototype/anli_agent.html) |
 
-> 建议从壳入口 [toudehao_final.html](https://saul-22.github.io/ai-pitcher-portfolio/prototype/toudehao_final.html) 进入，六页通过顶部导航切换。
-
 ## 深入阅读
 
 | 文档 | 内容 |
@@ -75,17 +71,17 @@ L1 或高风险 → 进「智能优化」收件箱等拍板（采纳 / 调整后
 | [完整案例叙事](case-study/AI智能投手.md) | 问题 → 洞察 → 决策 → 交付 → 验证 → 反思 |
 | [产品定位与价值逻辑](product/01-定位与价值逻辑.md) | 双受众、两道锁、高价论证、鲁棒性 |
 | [决策与动作模型](product/02-决策与动作模型.md) | L1/L2、批次时效、三态标签、动作词表 |
-| [投放成果页 PRD](product/03-投放成果页PRD.md) | 页面级 PRD 样例：结构、口径、文案纪律 |
+| [投放成果页 PRD](product/03-投放成果页PRD.md) | 页面结构、数据口径、文案纪律 |
 | [设计系统](design/01-设计系统.md) | Token、组件规范、"可点 ≠ 按钮" |
 | [信任交互设计](design/02-信任交互设计.md) | 数据抽屉、档案时间线、脏状态提交条 |
-| [策略产品化框架](strategy/策略框架.md) | 分层判定、防抖、冷启动保护（抽象版） |
+| [策略产品化框架](strategy/策略框架.md) | 分层判定、防抖、冷启动保护 |
 | [报告系统](reports/README.md) | 老板/优化师双线报告与渲染架构 · [卡片 Demo 直接打开](https://saul-22.github.io/ai-pitcher-portfolio/reports/demo.html) |
 
 ## 边界说明
 
-- 本仓库展示产品设计与方法论；生产策略引擎的完整规则、精确参数、代码实现与数据结构**不在公开范围**，以抽象框架和示意逻辑替代。
-- 原型为静态 Demo（iframe 拼装、演示数据），非生产前端工程；已知原型债（SPA 化、状态联动、空/错误态）在设计文档中如实标注。
-- 未公开上线效果指标处，以"验证方式与成功标准"替代，不虚构业务成果。
+- 生产策略引擎的完整规则、精确参数与代码实现不公开，以抽象框架替代。
+- 原型是交互定稿用的静态 Demo，非生产前端工程。
+- 不公开上线指标处不虚构业务成果。
 
 ## 许可
 
